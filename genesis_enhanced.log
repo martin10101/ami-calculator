@@ -1,0 +1,14 @@
+2025-07-31 11:58:30,391 - INFO - 🔍 STEP: MAIN | Starting Enhanced Universal Genesis Automation
+2025-07-31 11:58:30,392 - INFO - 🔧 DIAGNOSTIC [ENVIRONMENT]: Detected: WORK COMPUTER | 
+2025-07-31 11:58:30,393 - INFO - 🔧 DIAGNOSTIC [PARAMETERS]: Borough=Brooklyn, Block=1234, Lot=56 | 
+2025-07-31 11:58:30,393 - INFO - 🔧 DIAGNOSTIC [PARAMETERS]: Address=348 East 55 Street | 
+2025-07-31 11:58:30,393 - INFO - 🔍 STEP: SETUP_DRIVER | Initializing Chrome driver
+2025-07-31 11:58:30,393 - INFO - 🔍 STEP: DRIVER_SETUP | Environment: WORK
+2025-07-31 11:58:30,394 - INFO - 🔍 STEP: REGULAR_DRIVER | Creating regular Chrome driver
+2025-07-31 11:58:30,395 - ERROR - Regular driver creation failed: [WinError 5] Access is denied: 'C:\\Users\\harold.freund'
+2025-07-31 11:58:30,396 - ERROR - Primary driver creation failed: [WinError 5] Access is denied: 'C:\\Users\\harold.freund'
+2025-07-31 11:58:30,396 - INFO - 🔍 STEP: DRIVER_FALLBACK | Trying regular webdriver as fallback
+2025-07-31 11:58:30,396 - INFO - 🔍 STEP: REGULAR_DRIVER | Creating regular Chrome driver
+2025-07-31 11:58:30,397 - ERROR - Regular driver creation failed: [WinError 5] Access is denied: 'C:\\Users\\harold.freund'
+2025-07-31 11:58:30,397 - ERROR - Driver setup failed: [WinError 5] Access is denied: 'C:\\Users\\harold.freund'
+2025-07-31 11:58:30,397 - ERROR - Driver setup failed

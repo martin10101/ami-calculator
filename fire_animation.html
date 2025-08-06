@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Love Story</title>
+    <style>
+        body {
+            background-color: #010008; /* Deep indigo night sky */
+            margin: 0;
+            overflow: hidden;
+        }
+        #canvas {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+    let time = 0;
+
+    // --- EMBEDDED PERLIN NOISE ALGORITHM ---
+    const perlin = {
+        rand_vect: function(){ let theta = Math.random() * 2 * Math.PI; return {x: Math.cos(theta), y: Math.sin(theta)}; },
+        dot_prod_grid: function(x, y, vx, vy){
+            let g_vect;
+            let d_vect = {x: x - vx, y: y - vy};
+            if (this.gradients[[vx,vy]]){ g_vect = this.gradients[[vx,vy]]; }
+            else { g_vect = this.rand_vect(); this.gradients[[vx,vy]] = g_vect; }
+            return d_vect.x * g_vect.x + d_vect.y * g_vect.y;
+        },
+        smootherstep: function(x){ return 6*x**5 - 15*x**4 + 10*x**3; },
+        interp: function(x, a, b){ return a + this.smootherstep(x) * (b-a); },
+        seed: function(){ this.gradients = {}; this.memory = {}; },
+        get: function(x, y) {
+            if (this.memory.hasOwnProperty([x,y])) return this.memory[[x,y]];
+            let xf = Math.floor(x); let yf = Math.floor(y);
+            let tl = this.dot_prod_grid(x, y, xf,   yf); let tr = this.dot_prod_grid(x, y, xf+1, yf);
+            let bl = this.dot_prod_grid(x, y, xf,   yf+1); let br = this.dot_prod_grid(x, y, xf+1, yf+1);
+            let xt = this.interp(x-xf, tl, tr); let xb = this.interp(x-xf, bl, br);
+            let v = this.interp(y-yf, xt, xb);
+            this.memory[[x,y]] = v;
+            return v;
+        }
+    }
+    perlin.seed();
+    // --- END OF NOISE ---
+
+    // 5. Deeply Emotional Color Palettes
+    const soulPalette1 = ['#FFD700', '#FFA500', '#FF8C00']; // Warm, golden soul
+    const soulPalette2 = ['#E6E6FA', '#D8BFD8', '#C0C0C0']; // Cool, silver soul
+    const lovePalette = ['#FFC0CB', '#FFB6C1', '#FF69B4', '#DB7093', '#FFFFFF']; // Love's radiant flare
+
+    class Particle {
+        constructor(x, y, isSoul1) {
+            this.x = x;
+            this.y = y;
+            this.isSoul1 = isSoul1;
+            this.size = Math.random() * 1.5 + 1;
+            this.life = 1;
+            this.basePalette = isSoul1 ? soulPalette1 : soulPalette2;
+            this.color = this.basePalette[Math.floor(Math.random() * this.basePalette.length)];
+            this.vx = 0;
+            this.vy = 0;
+            this.noiseOffsetX = Math.random() * 100;
+            this.noiseOffsetY = Math.random() * 100;
+        }
+
+        update(distanceToCenter) {
+            const noiseFactor = 0.002;
+            const angle = perlin.get(this.x * noiseFactor, this.y * noiseFactor + this.noiseOffsetY + time) * Math.PI * 4;
+
+            // Move towards the center with organic motion
+            const pullToCenter = (1 - Math.min(1, distanceToCenter / (canvas.width / 2))) * 0.5;
+            this.vx += (Math.cos(angle) * 0.1) - (this.x - canvas.width / 2) * 0.0001 * pullToCenter;
+            this.vy += (Math.sin(angle) * 0.1) - (this.y - canvas.height / 2) * 0.0001 * pullToCenter;
+
+            // Damping
+            this.vx *= 0.98;
+            this.vy *= 0.98;
+            
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // The Embrace: Change color palette based on proximity to the center
+            if (distanceToCenter < 100) {
+                const lerpFactor = 1 - (distanceToCenter / 100);
+                if (Math.random() < lerpFactor * 0.1) {
+                    this.color = lovePalette[Math.floor(Math.random() * lovePalette.length)];
+                }
+            } else {
+                 this.color = this.basePalette[Math.floor(Math.random() * this.basePalette.length)];
+            }
+            
+            this.life -= 0.001;
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.globalAlpha = this.life;
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 5;
+            ctx.fill();
+        }
+    }
+
+    function init() {
+        for (let i = 0; i < 200; i++) {
+            const isSoul1 = i < 100;
+            const x = isSoul1 ? Math.random() * (canvas.width / 4) : canvas.width - Math.random() * (canvas.width / 4);
+            const y = Math.random() * canvas.height;
+            particles.push(new Particle(x, y, isSoul1));
+        }
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.globalAlpha = 1;
+        ctx.shadowBlur = 0;
+        
+        time += 0.001;
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            const dx = p.x - canvas.width / 2;
+            const dy = p.y - canvas.height / 2;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            p.update(distance);
+            p.draw();
+
+            if (p.life <= 0) {
+                particles.splice(i, 1);
+                // Rebirth on the edge
+                const isSoul1 = Math.random() > 0.5;
+                const x = isSoul1 ? 0 : canvas.width;
+                const y = Math.random() * canvas.height;
+                particles.push(new Particle(x, y, isSoul1));
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    }
+
+    init();
+    animate();
+
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+
+</script>
+
+</body>
+</html>

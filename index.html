@@ -503,10 +503,8 @@
                         console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (80% group, index ${index})`);
                     }
                 } else {
-                    // Single AMI level: use modulo to cycle through if multiple levels
-                    const amiIndex = index % amiLevels.length;
-                    unit.amiLevel = amiLevels[amiIndex];
-                    console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (index ${index}, amiIndex ${amiIndex})`);
+                    unit.amiLevel = amiLevels[0]; // Single AMI level
+                    console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (single level)`);
                 }
             });
 

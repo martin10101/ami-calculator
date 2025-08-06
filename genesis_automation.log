@@ -1,0 +1,209 @@
+2025-07-31 12:05:00,938 - INFO - 🔍 Launching file search for property address in parallel...
+2025-07-31 12:05:00,940 - INFO - 🚀 ===== DUAL AUTOMATION STARTING =====
+2025-07-31 12:05:00,940 - INFO - 🚀 Step 1: NYC Property Portal automation (runs FIRST)
+2025-07-31 12:05:00,940 - INFO - 🚀 Step 2: Google Maps automation (runs SECOND)
+2025-07-31 12:05:00,941 - INFO - 🚀 Step 3: GENESIS automation (runs THIRD, exactly as before)
+2025-07-31 12:05:00,941 - INFO - Setting up WebDriver
+2025-07-31 12:05:00,941 - INFO - ====== WebDriver manager ======
+2025-07-31 12:05:01,131 - INFO - Opened file: C:\Users\MLFLL\Downloads\n8ntest\348 East 55 Street.txt
+2025-07-31 12:05:02,904 - INFO - Chrome driver initialized successfully
+2025-07-31 12:05:02,904 - INFO - ====== Starting INFINITE Genesis GenPAD Automation ======
+2025-07-31 12:05:02,905 - INFO - Property: Brooklyn, Block 1234, Lot 56, Tax Class 2
+2025-07-31 12:05:02,905 - INFO - Property Address: 348 East 55 Street
+2025-07-31 12:05:02,905 - INFO - Owner: John Doe
+2025-07-31 12:05:02,905 - INFO - Record ID: 12345
+2025-07-31 12:05:02,906 - INFO - 🏢 Running NYC automation FIRST...
+2025-07-31 12:05:02,906 - INFO - 🏢 ===== NYC PROPERTY PORTAL AUTOMATION STARTING FIRST =====
+2025-07-31 12:05:02,907 - INFO - 🏢 Searching for: Borough=Brooklyn, Block=1234, Lot=56
+2025-07-31 12:05:07,812 - INFO - 🏢 Navigated to NYC Property Information Portal
+2025-07-31 12:05:09,244 - INFO - 🏢 Clicked Select dropdown
+2025-07-31 12:05:10,020 - INFO - 🏢 Selected Borough / Block / Lot option
+2025-07-31 12:05:11,192 - INFO - 🏢 Selected borough: Brooklyn (value: 3)
+2025-07-31 12:05:11,689 - INFO - 🏢 Entered block: 1234
+2025-07-31 12:05:11,899 - INFO - 🏢 Entered lot: 56 (EXACT from Airtable)
+2025-07-31 12:05:12,140 - INFO - 🏢 Clicked Search button
+2025-07-31 12:05:14,351 - INFO - 🏢 Looking for Property Tax Account link...
+2025-07-31 12:05:17,734 - INFO - 🏢 ✅ Found Property Tax Account link (class method)
+2025-07-31 12:05:18,116 - INFO - 🏢 ✅ IMMEDIATELY clicked Property Tax Account link
+2025-07-31 12:05:20,117 - INFO - 🏢 ✅ Property Tax Account page opened
+2025-07-31 12:05:20,117 - INFO - 🏢 ===== NYC AUTOMATION COMPLETED - RETURNING CONTROL TO GENESIS =====
+2025-07-31 12:05:20,209 - INFO - 🏢 ✅ Switched back to GENESIS tab for GENESIS automation
+2025-07-31 12:05:20,210 - INFO - 🗺️ Running Google Maps automation SECOND...
+2025-07-31 12:05:20,211 - INFO - 🗺️ ===== GOOGLE MAPS AUTOMATION STARTING =====
+2025-07-31 12:05:20,212 - INFO - 🗺️ Opening Google Maps for address: 348 East 55 Street
+2025-07-31 12:05:21,833 - INFO - 🗺️ Navigated to Google Maps with property address
+2025-07-31 12:05:23,859 - INFO - 🗺️ ✅ Google Maps opened successfully
+2025-07-31 12:05:23,860 - INFO - 🗺️ ===== GOOGLE MAPS AUTOMATION COMPLETED =====
+2025-07-31 12:05:23,918 - INFO - 🗺️ ✅ Switched back to GENESIS tab
+2025-07-31 12:05:23,919 - INFO - ⚡ Starting Genesis automation THIRD...
+2025-07-31 12:05:23,919 - INFO - Navigating to Genesis GenPAD and logging in
+2025-07-31 12:05:27,287 - INFO - Login required - filling credentials
+2025-07-31 12:05:27,550 - INFO - Entered email address
+2025-07-31 12:05:27,749 - INFO - Entered password
+2025-07-31 12:05:27,940 - INFO - Clicked login button
+2025-07-31 12:05:32,956 - INFO - Current URL: https://genesisgenpad.com/comparison/main
+2025-07-31 12:05:32,957 - INFO - Successfully on comparison page
+2025-07-31 12:05:32,957 - INFO - 
+===== USING FIXED RADIUS: 0.5 miles =====
+2025-07-31 12:05:32,958 - INFO - 🔧 Setting up complete form with lot validation
+2025-07-31 12:05:32,958 - INFO - 🔧 INITIAL FORM SETUP (one-time only)
+2025-07-31 12:05:33,459 - INFO - ✅ Comparison Type: Changed from '3' to '2'
+2025-07-31 12:05:37,509 - INFO - Distance area is now visible
+2025-07-31 12:05:37,777 - INFO - ✅ Distance Unit: Changed from '1' to '2'
+2025-07-31 12:05:38,778 - INFO - ENHANCED BOROUGH DETECTION: Selecting Brooklyn
+2025-07-31 12:05:38,780 - INFO - Fuzzy match for 'Brooklyn': brooklyn (score: 1.00)
+2025-07-31 12:05:38,780 - INFO - Target borough 'Brooklyn' matched to 'brooklyn' (confidence: 1.00)
+2025-07-31 12:05:38,833 - INFO - Testing borough value: 1 for brooklyn
+2025-07-31 12:05:40,086 - INFO - Value '1' selected: 'Brooklyn' (value: 1)
+2025-07-31 12:05:40,087 - INFO - Fuzzy match for 'Brooklyn': brooklyn (score: 1.00)
+2025-07-31 12:05:40,087 - INFO - SUCCESS: brooklyn selected with value '1' -> 'Brooklyn'
+2025-07-31 12:05:41,416 - INFO - ✅ Block: Changed from '' to '1234'
+2025-07-31 12:05:42,417 - INFO - 🔍 Starting lot number validation...
+2025-07-31 12:05:42,418 - INFO - 🔍 STARTING SMART CHUNKED LOT SEARCH - Original lot: 56
+2025-07-31 12:05:42,418 - INFO - 🧪 Testing lot number: 56
+2025-07-31 12:05:42,680 - INFO - ✅ Lot 56: Changed from '' to '56'
+2025-07-31 12:05:43,739 - INFO - 🔄 Exited lot field for lot 56
+2025-07-31 12:05:43,740 - INFO - ⏳ Waiting 4.0 seconds for Genesis to validate lot 56...
+2025-07-31 12:05:47,810 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:05:47,811 - INFO - ❌ Lot 56: 'Target property does not exist' - continuing search
+2025-07-31 12:05:47,811 - INFO - 🔍 Searching chunk: up 1-10 (lots 57 to 66)
+2025-07-31 12:05:47,811 - INFO - 🔍 Trying lot 57 in chunk 'up 1-10'
+2025-07-31 12:05:47,812 - INFO - 🧪 Testing lot number: 57
+2025-07-31 12:05:48,085 - INFO - ✅ Lot 57: Changed from '56' to '57'
+2025-07-31 12:05:49,134 - INFO - 🔄 Exited lot field for lot 57
+2025-07-31 12:05:49,134 - INFO - ⏳ Waiting 6.0 seconds for Genesis to validate lot 57...
+2025-07-31 12:05:55,135 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:05:55,135 - INFO - ❌ Lot 57: 'Target property does not exist' - continuing search
+2025-07-31 12:05:55,136 - INFO - 🔍 Trying lot 58 in chunk 'up 1-10'
+2025-07-31 12:05:55,136 - INFO - 🧪 Testing lot number: 58
+2025-07-31 12:05:55,394 - INFO - ✅ Lot 58: Changed from '57' to '58'
+2025-07-31 12:05:56,446 - INFO - 🔄 Exited lot field for lot 58
+2025-07-31 12:05:56,447 - INFO - ⏳ Waiting 4.1 seconds for Genesis to validate lot 58...
+2025-07-31 12:06:00,557 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:06:00,557 - INFO - ❌ Lot 58: 'Target property does not exist' - continuing search
+2025-07-31 12:06:00,557 - INFO - 🔍 Trying lot 59 in chunk 'up 1-10'
+2025-07-31 12:06:00,558 - INFO - 🧪 Testing lot number: 59
+2025-07-31 12:06:00,807 - INFO - ✅ Lot 59: Changed from '58' to '59'
+2025-07-31 12:06:01,857 - INFO - 🔄 Exited lot field for lot 59
+2025-07-31 12:06:01,857 - INFO - ⏳ Waiting 5.0 seconds for Genesis to validate lot 59...
+2025-07-31 12:06:06,929 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:06:06,929 - INFO - ❌ Lot 59: 'Target property does not exist' - continuing search
+2025-07-31 12:06:06,929 - INFO - 🔍 Trying lot 60 in chunk 'up 1-10'
+2025-07-31 12:06:06,930 - INFO - 🧪 Testing lot number: 60
+2025-07-31 12:06:07,181 - INFO - ✅ Lot 60: Changed from '59' to '60'
+2025-07-31 12:06:08,233 - INFO - 🔄 Exited lot field for lot 60
+2025-07-31 12:06:08,234 - INFO - ⏳ Waiting 5.6 seconds for Genesis to validate lot 60...
+2025-07-31 12:06:13,836 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:06:13,836 - INFO - ❌ Lot 60: 'Target property does not exist' - continuing search
+2025-07-31 12:06:13,837 - INFO - 🔍 Trying lot 61 in chunk 'up 1-10'
+2025-07-31 12:06:13,837 - INFO - 🧪 Testing lot number: 61
+2025-07-31 12:06:14,096 - INFO - ✅ Lot 61: Changed from '60' to '61'
+2025-07-31 12:06:15,138 - INFO - 🔄 Exited lot field for lot 61
+2025-07-31 12:06:15,138 - INFO - ⏳ Waiting 4.5 seconds for Genesis to validate lot 61...
+2025-07-31 12:06:19,665 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:06:19,666 - INFO - ❌ Lot 61: 'Target property does not exist' - continuing search
+2025-07-31 12:06:19,666 - INFO - 🔍 Trying lot 62 in chunk 'up 1-10'
+2025-07-31 12:06:19,666 - INFO - 🧪 Testing lot number: 62
+2025-07-31 12:06:19,920 - INFO - ✅ Lot 62: Changed from '61' to '62'
+2025-07-31 12:06:20,972 - INFO - 🔄 Exited lot field for lot 62
+2025-07-31 12:06:20,972 - INFO - ⏳ Waiting 5.7 seconds for Genesis to validate lot 62...
+2025-07-31 12:06:26,724 - INFO - ❌ Found 'Target property does not exist' error
+2025-07-31 12:06:26,725 - INFO - ❌ Lot 62: 'Target property does not exist' - continuing search
+2025-07-31 12:06:26,725 - INFO - 🔍 Trying lot 63 in chunk 'up 1-10'
+2025-07-31 12:06:26,725 - INFO - 🧪 Testing lot number: 63
+2025-07-31 12:06:26,981 - INFO - ✅ Lot 63: Changed from '62' to '63'
+2025-07-31 12:06:28,033 - INFO - 🔄 Exited lot field for lot 63
+2025-07-31 12:06:28,034 - INFO - ⏳ Waiting 4.9 seconds for Genesis to validate lot 63...
+2025-07-31 12:06:33,131 - INFO - ✅ No 'Target property does not exist' error found
+2025-07-31 12:06:33,132 - INFO - ✅ Lot 63: Property exists! No error message found - VALID PROPERTY
+2025-07-31 12:06:33,132 - INFO - 🛑 STOPPING SEARCH - Found valid property at lot 63
+2025-07-31 12:06:33,132 - INFO - 🔍 SMART CHUNKED SEARCH COMPLETE - Using lot: 63
+2025-07-31 12:06:33,133 - INFO - 🔍 LOT VALIDATION COMPLETE - Using lot: 63
+2025-07-31 12:06:33,408 - INFO - ✅ Tax Class: Changed from '1' to '3'
+2025-07-31 12:06:34,674 - INFO - ✅ Year Built Low: Changed from '1625' to '2015'
+2025-07-31 12:06:35,949 - INFO - ✅ Year Built High: Changed from '2099' to '2022'
+2025-07-31 12:06:36,950 - INFO - 🔧 FIXING Assessment field (ensuring value sticks)
+2025-07-31 12:06:36,998 - WARNING - Method 1 failed: Message: javascript error: visible_textbox is not defined
+  (Session info: chrome=138.0.7204.158)
+Stacktrace:
+	GetHandleVerifier [0x0x7ff72c4ee415+77285]
+	GetHandleVerifier [0x0x7ff72c4ee470+77376]
+	(No symbol) [0x0x7ff72c2b9a6a]
+	(No symbol) [0x0x7ff72c2c1419]
+	(No symbol) [0x0x7ff72c2c4811]
+	(No symbol) [0x0x7ff72c361c0b]
+	(No symbol) [0x0x7ff72c33860a]
+	(No symbol) [0x0x7ff72c36087f]
+	(No symbol) [0x0x7ff72c3383e3]
+	(No symbol) [0x0x7ff72c301521]
+	(No symbol) [0x0x7ff72c3022b3]
+	GetHandleVerifier [0x0x7ff72c7d1efd+3107021]
+	GetHandleVerifier [0x0x7ff72c7cc29d+3083373]
+	GetHandleVerifier [0x0x7ff72c7ebedd+3213485]
+	GetHandleVerifier [0x0x7ff72c50884e+184862]
+	GetHandleVerifier [0x0x7ff72c51055f+216879]
+	GetHandleVerifier [0x0x7ff72c4f7084+113236]
+	GetHandleVerifier [0x0x7ff72c4f7239+113673]
+	GetHandleVerifier [0x0x7ff72c4de298+11368]
+	BaseThreadInitThunk [0x0x7ffd6af5e8d7+23]
+	RtlUserThreadStart [0x0x7ffd6be1c34c+44]
+
+2025-07-31 12:06:39,249 - INFO - ✅ Assessment Low: 1 (Method 2 - value validated)
+2025-07-31 12:06:39,533 - INFO - ✅ Sort Order: Changed from '1' to '2'
+2025-07-31 12:06:40,534 - INFO - ✅ Initial form setup completed
+2025-07-31 12:06:40,535 - INFO - 🔧 UPDATING DISTANCE ONLY: 0.5 miles
+2025-07-31 12:06:40,792 - INFO - ✅ Distance (0.5 miles): Changed from '' to '0.5'
+2025-07-31 12:06:41,793 - INFO - ✅ Distance updated to 0.5 miles (other fields preserved)
+2025-07-31 12:06:41,794 - INFO - STEP 4: Running search with navigation bar fix
+2025-07-31 12:06:41,794 - INFO - Clicking RUN button with navigation bar fix
+2025-07-31 12:06:44,173 - INFO - Successfully clicked RUN button (regular click)
+2025-07-31 12:06:44,174 - INFO - Waiting for search results to load...
+2025-07-31 12:06:59,175 - INFO - Looking for 'Records Selected' count in results box...
+2025-07-31 12:06:59,213 - INFO - Found 'Records Selected' label
+2025-07-31 12:06:59,279 - INFO - Raw Records Selected text: '22'
+2025-07-31 12:06:59,280 - INFO - PARSED RESULT: 22 records selected
+2025-07-31 12:06:59,281 - INFO - Found 22 records at 0.5 miles
+2025-07-31 12:06:59,281 - INFO - SUCCESS: Found 22 records (>= 10)
+2025-07-31 12:06:59,282 - INFO - === EXCEL DOWNLOAD WITH CUSTOM NAMING ===
+2025-07-31 12:06:59,283 - INFO - Initial Excel files: 0
+2025-07-31 12:06:59,346 - INFO - Found Excel button with ID 'btn-excel'
+2025-07-31 12:07:01,690 - INFO - Successfully clicked Excel button (regular click)
+2025-07-31 12:07:01,690 - INFO - Waiting for Excel download...
+2025-07-31 12:07:05,695 - INFO - 📄 Generated Excel filename: 348_East_55_Street_Genesis_Report_22_records.xlsx
+2025-07-31 12:07:05,695 - INFO - SUCCESS: Downloaded and renamed Excel file: 348_East_55_Street_Genesis_Report_22_records.xlsx
+2025-07-31 12:07:05,696 - INFO - Excel download completed successfully
+2025-07-31 12:07:05,696 - INFO - Keeping results page open for review...
+2025-07-31 12:07:05,696 - INFO - INFINITE automation completed successfully!
+2025-07-31 12:07:05,697 - INFO - 🎉 TRIPLE AUTOMATION COMPLETED SUCCESSFULLY!
+2025-07-31 12:07:05,697 - INFO - ✅ NYC Property Portal automation: COMPLETED
+2025-07-31 12:07:05,698 - INFO - ✅ Google Maps automation: COMPLETED
+2025-07-31 12:07:05,698 - INFO - ✅ GENESIS automation: COMPLETED
+2025-07-31 12:07:05,698 - INFO - 🚀 All automations finished - browser will stay open
+2025-07-31 12:07:05,698 - INFO - 🔄 KEEPING PYTHON SCRIPT ALIVE FOREVER...
+2025-07-31 12:07:05,698 - INFO - 🎉 SUCCESS! Browser will remain open indefinitely
+2025-07-31 12:07:05,699 - INFO - 📊 You can now review the results in the browser
+2025-07-31 12:07:05,699 - INFO - 🔍 Excel download completed and browser kept open
+2025-07-31 12:07:05,699 - INFO - 🔒 Python script running indefinitely - browser will NEVER close
+2025-07-31 12:07:05,699 - INFO - 💡 To close browser: Press Ctrl+C in this terminal, then close browser manually
+2025-07-31 12:08:05,713 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:09:05,729 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:10:05,742 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:11:05,755 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:12:05,769 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:13:05,782 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:14:05,795 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:15:05,808 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:16:05,820 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:17:05,833 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:18:05,847 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:19:05,859 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:20:05,871 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:21:05,884 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:22:05,897 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:23:05,910 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:24:05,921 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:25:05,939 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:26:05,967 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:27:05,996 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 12:28:06,025 - INFO - 🔄 Browser still alive - Current URL: https://genesisgenpad.com/comparison/main...
+2025-07-31 13:48:01,385 - WARNING - ⚠️ Browser may have been closed manually
