@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent AMI Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --header-text-color: #ffffff;
+            --border-radius: 12px;
+            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+            --ai-message-bg: #e9ecef;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: var(--header-text-color);
+            padding: 1rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+        h1 { font-size: 1.5rem; margin: 0; }
+
+        main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            box-sizing: border-box;
+            overflow-y: hidden;
+        }
+
+        #chat-window {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: var(--border-radius);
+            max-width: 85%;
+            line-break: anywhere;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.3s forwards;
+        }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+
+        .user-message { background-color: var(--secondary-color); color: white; margin-left: auto; text-align: left; }
+        .ai-message { background-color: var(--ai-message-bg); color: var(--text-color); margin-right: auto; }
+        .system-message { text-align: center; color: #888; font-style: italic; font-size: 0.9em; margin-bottom: 1rem; }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        #chat-input { flex-grow: 1; border: 1px solid #ccc; border-radius: var(--border-radius); padding: 0.75rem; font-size: 1rem; }
+        #api-key-input { flex-grow: 1; border-radius: var(--border-radius); padding: 0.75rem; font-size: 1rem; border: 1px solid var(--primary-color); }
+        
+        .chat-button {
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 0 1.5rem;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .chat-button:hover { background-color: var(--secondary-color); }
+        .chat-button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        .scenario-results {
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <header><h1>Intelligent AMI Calculator</h1></header>
+    <main>
+        <div id="chat-window"></div>
+        <div id="api-key-container" class="input-container">
+            <input type="password" id="api-key-input" placeholder="Enter your Gemini API Key and press Enter...">
+        </div>
+        <div id="chat-input-container" class="input-container" style="display: none;">
+            <input type="text" id="chat-input" placeholder="Type your message here...">
+            <button id="upload-btn" class="chat-button" title="Upload Excel File">📎</button>
+            <button id="send-btn" class="chat-button">Send</button>
+        </div>
+    </main>
+    <input type="file" id="file-input" accept=".xlsx, .xls" style="display: none;">
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
+
+        // --- STATE ---
+        let state = { apiKey: null, buildingData: null, isProcessing: false };
+
+        // --- DOM ELEMENTS ---
+        const chatWindow = document.getElementById('chat-window');
+        const apiKeyContainer = document.getElementById('api-key-container');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const chatInputContainer = document.getElementById('chat-input-container');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const uploadBtn = document.getElementById('upload-btn');
+        const fileInput = document.getElementById('file-input');
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        apiKeyInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleApiKey());
+        sendBtn.addEventListener('click', handleUserMessage);
+        chatInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleUserMessage());
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileUpload);
+        
+        // --- INITIALIZATION ---
+        async function initializeApp() {
+            console.log("🚀 Initializing app...");
+            const storedKey = localStorage.getItem('geminiApiKey');
+            console.log("📦 Stored key found:", !!storedKey);
+            if (storedKey) {
+                console.log("🔄 Auto-loading stored key...");
+                await verifyAndSetApiKey(storedKey, true);
+            } else {
+                console.log("❌ No stored key, showing input");
+                addMessage("Hello! To begin, please enter your Gemini API key.", 'ai');
+            }
+        }
+        
+        // --- API KEY HANDLING ---
+        async function handleApiKey() {
+            console.log("🔑 handleApiKey called");
+            console.log("📝 Input value:", apiKeyInput.value);
+            await verifyAndSetApiKey(apiKeyInput.value);
+        }
+
+        async function verifyAndSetApiKey(key, isAutoLoad = false) {
+            console.log("🔐 verifyAndSetApiKey called", { key: key ? key.substring(0, 10) + "..." : "empty", isAutoLoad });
+            key = key.trim();
+            if (!key) {
+                console.log("❌ No key provided");
+                return addMessage("Please provide an API key.", 'system');
+            }
+
+            console.log("🔒 Disabling input...");
+            apiKeyInput.disabled = true;
+            if (!isAutoLoad) addMessage("Verifying API Key...", 'system');
+
+            try {
+                console.log("🤖 Creating GoogleGenerativeAI instance...");
+                const genAI = new GoogleGenerativeAI(key);
+                console.log("📊 Getting model...");
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                console.log("🔢 Testing token count...");
+                await model.countTokens("test");
+                console.log("✅ Token count test passed");
+                
+                state.apiKey = key;
+                state.genAI = genAI;
+                state.model = model;
+                localStorage.setItem('geminiApiKey', key);
+                console.log("💾 Key saved to localStorage");
+                
+                if (!isAutoLoad) addMessage("Success! API Key is valid and has been saved for future sessions.", 'system');
+                
+                console.log("🎯 Showing chat input...");
+                showChatInput();
+            } catch (error) {
+                console.error("❌ API Key verification failed:", error);
+                addMessage("API Key is invalid. Please try again.", 'system');
+                apiKeyInput.disabled = false;
+            }
+        }
+
+        // --- UI FLOW ---
+        function showChatInput() {
+            console.log("🔄 showChatInput called");
+            console.log("📦 Current state:", { 
+                apiKey: !!state.apiKey, 
+                buildingData: !!state.buildingData,
+                isProcessing: state.isProcessing 
+            });
+            apiKeyContainer.style.display = 'none';
+            chatInputContainer.style.display = 'flex';
+            chatInput.focus();
+            console.log("✅ Chat input shown");
+        }
+
+        // --- FILE HANDLING ---
+        function handleFileUpload(event) {
+            console.log("📁 handleFileUpload called");
+            const file = event.target.files[0];
+            if (!file) {
+                console.log("❌ No file selected");
+                return;
+            }
+            console.log("📄 File selected:", file.name, file.size, "bytes");
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                console.log("📖 File read complete");
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    console.log("📊 Data size:", data.length, "bytes");
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    console.log("📋 Workbook sheets:", workbook.SheetNames);
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    console.log("📈 Raw JSON data:", jsonData.length, "rows");
+                    console.log("📊 Sample row:", jsonData[0]);
+                    
+                    state.buildingData = normalizeAndExtractUnits(jsonData);
+                    console.log("🏢 Normalized building data:", state.buildingData);
+                    
+                    if (state.buildingData && state.buildingData.length > 0) {
+                        const totalSF = state.buildingData.reduce((sum, unit) => sum + unit.sf, 0);
+                        console.log("📏 Total SF calculated:", totalSF);
+                        addMessage(`File uploaded successfully! Found ${state.buildingData.length} units with ${totalSF.toFixed(1)} total square footage.`, 'system');
+                    } else {
+                        console.log("❌ No valid units found");
+                        addMessage("Error: No valid unit data found. Please check your Excel file format.", 'system');
+                    }
+                } catch (error) {
+                    console.error("❌ File processing error:", error);
+                    addMessage("Error processing file: " + error.message, 'system');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- CONVERSATION ---
+        async function handleUserMessage() {
+            console.log("💬 handleUserMessage called");
+            const userText = chatInput.value.trim();
+            console.log("📝 User text:", userText);
+            if (!userText || state.isProcessing) {
+                console.log("❌ Skipping - empty text or processing");
+                return;
+            }
+
+            addMessage(userText, 'user');
+            chatInput.value = '';
+            state.isProcessing = true;
+            updateUI();
+            
+            try {
+                console.log("🤖 Using existing AI model...");
+                const prompt = buildMasterPrompt(userText);
+                console.log("📤 Sending prompt to AI...");
+                const result = await state.model.generateContent(prompt);
+                const responseText = result.response.text();
+                console.log("📥 AI response:", responseText);
+
+                if (responseText.includes("ACTION_CALCULATE")) {
+                    console.log("🧮 Action calculate detected");
+                    const jsonPart = responseText.substring(responseText.indexOf('{'));
+                    console.log("📋 JSON part:", jsonPart);
+                    try {
+                        const requirements = JSON.parse(jsonPart);
+                        console.log("📊 Parsed requirements:", requirements);
+                        console.log("🎯 AMI Distribution:", requirements.amiDistribution);
+                        console.log("🎯 Required Floors:", requirements.requiredFloors);
+                        console.log("🎯 Target SF:", requirements.targetSF);
+                        runAndDisplayScenarios(requirements);
+                    } catch (parseError) {
+                        console.error("❌ JSON parse error:", parseError);
+                        console.log("📋 Raw response text:", responseText);
+                        addMessage("Error parsing AI response. Please try again.", 'ai');
+                    }
+                } else {
+                    console.log("💬 Regular AI response");
+                    addMessage(responseText, 'ai');
+                }
+            } catch (error) {
+                console.error("❌ AI Error:", error);
+                addMessage("An error occurred with the AI. Please try again.", 'ai');
+            } finally {
+                state.isProcessing = false;
+                updateUI();
+            }
+        }
+        
+        // --- UTILITIES ---
+        function updateUI() {
+            console.log("🎨 updateUI called");
+            const hasKey = !!state.apiKey;
+            const isProcessing = state.isProcessing;
+            console.log("🔑 UI state:", { hasKey, isProcessing });
+            chatInput.disabled = !hasKey || isProcessing;
+            sendBtn.disabled = !hasKey || isProcessing;
+            uploadBtn.disabled = !hasKey || isProcessing;
+            chatInput.placeholder = isProcessing ? "Thinking..." : "Type your message here...";
+        }
+
+        function addMessage(text, role, isHTML = false) {
+            console.log("💬 addMessage:", { role, isHTML, textLength: text.length });
+            const el = document.createElement('div');
+            el.className = `chat-message ${role}-message`;
+            if (isHTML) el.innerHTML = text;
+            else el.textContent = text;
+            chatWindow.appendChild(el);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function buildMasterPrompt(userText) {
+             console.log("🏗️ buildMasterPrompt called");
+             const buildingDataSummary = state.buildingData ? {
+                 totalUnits: state.buildingData.length,
+                 totalSquareFootage: state.buildingData.reduce((s, u) => s + u.sf, 0),
+             } : null;
+             console.log("📊 Building data summary:", buildingDataSummary);
+
+             return `
+                You are an expert calculation tool for NYC affordable housing. Your only goal is to extract requirements from the user's text and trigger a calculation.
+                **Core Directive: CALCULATE, DON'T CONSULT.**
+                - Your job is to run the numbers.
+                - **NEVER** ask for external documents.
+                - **MAKE REASONABLE ASSUMPTIONS.** 
+                
+                **AMI DISTRIBUTION RULES:**
+                - When user says "40% AMI is required" with "average should still be 60% AMI", this means:
+                  * 20% of units at 40% AMI (for deeper affordability)
+                  * 80% of units at 60% AMI (to achieve 60% average)
+                - When user says just "40% AMI units", assume 100% at 40% AMI
+                
+                **CONTEXT:**
+                - Building Data Summary: ${JSON.stringify(buildingDataSummary)}.
+                
+                **USER'S LATEST MESSAGE:**
+                "${userText}"
+                
+                **YOUR TASK:**
+                1. Immediately analyze the user's message.
+                2. Extract these requirements:
+                   - targetSF: The required square footage (number)
+                   - amiDistribution: Array of AMI percentages (e.g., [40, 60] for mixed distribution)
+                   - requiredFloors: Array of floor numbers (e.g., [5, 6])
+                3. If you can extract requirements, your ONLY response must be "ACTION_CALCULATE" followed by the JSON: {"targetSF": ..., "amiDistribution": [...], "requiredFloors": [...]}.
+                4. If missing target SF, you may ask for that one thing.
+                
+                **EXAMPLES:**
+                - "2,043.3 sf of affordable is required. 40% AMI units are required. There should be an affordable unit on floors 5 and 6."
+                  → {"targetSF": 2043.3, "amiDistribution": [40, 60], "requiredFloors": [5, 6]}
+                - "I need 1500 sf at 50% AMI"
+                  → {"targetSF": 1500, "amiDistribution": [50], "requiredFloors": []}
+                - "40% AMI is required, average should be 60% AMI"
+                  → {"targetSF": [extract from context], "amiDistribution": [40, 60], "requiredFloors": []}
+              `;
+         }
+
+        function runAndDisplayScenarios(requirements) {
+            console.log("🎯 runAndDisplayScenarios called");
+            console.log("📋 Requirements:", requirements);
+            if (!state.buildingData) {
+                console.log("❌ No building data available");
+                addMessage("Please upload a building data file first.", 'ai');
+                return;
+            }
+
+            console.log("🏢 Building data available:", state.buildingData.length, "units");
+            const scenarios = [
+                generateScenario("Exact Target Match", "Aims for the closest SF match to requirements", requirements, (a, b) => Math.abs(a.sf - requirements.targetSF) - Math.abs(b.sf - requirements.targetSF)),
+                generateScenario("Minimum Units Strategy", "Uses largest units to minimize count", requirements, (a, b) => b.sf - a.sf),
+                generateScenario("Maximum Affordability", "Uses smallest units to maximize count", requirements, (a, b) => a.sf - b.sf),
+                generateScenario("Balanced Floor Distribution", "Includes required floors, then fills remainder", requirements, (a, b) => {
+                    const aOnRequiredFloor = requirements.requiredFloors.includes(a.floor);
+                    const bOnRequiredFloor = requirements.requiredFloors.includes(b.floor);
+                    if (aOnRequiredFloor && !bOnRequiredFloor) return -1;
+                    if (!aOnRequiredFloor && bOnRequiredFloor) return 1;
+                    return a.sf - b.sf;
+                })
+            ];
+
+            console.log("📊 Generated scenarios:", scenarios.length);
+            let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results</h3>';
+            scenarios.forEach((scenario, index) => {
+                console.log(`📋 Scenario ${index + 1}:`, scenario.title, scenario.units.length, "units");
+                resultHTML += `<h4>${index + 1}. ${scenario.title}</h4>`;
+                resultHTML += `<p><em>${scenario.reasoning}</em></p>`;
+                resultHTML += `<p><strong>Result:</strong> ${scenario.units.length} units, ${scenario.totalSF.toFixed(1)} sf</p>`;
+                resultHTML += '<ul>';
+                scenario.units.forEach(unit => {
+                    const amiColor = getAMIColor(unit.amiLevel);
+                    resultHTML += `<li style="color: ${amiColor};">${unit.unit} (${unit.sf.toFixed(1)} sf) - ${unit.amiLevel}% AMI</li>`;
+                });
+                resultHTML += '</ul>';
+            });
+            resultHTML += '</div>';
+            
+            addMessage(resultHTML, 'ai', true);
+        }
+
+        function generateScenario(title, reasoning, requirements, sortFn) {
+            console.log("🎲 generateScenario:", title);
+            let availableUnits = [...state.buildingData];
+            console.log("📦 Available units:", availableUnits.length);
+            
+            // Pre-select units from required floors if specified
+            if (requirements.requiredFloors && requirements.requiredFloors.length > 0) {
+                console.log("🏢 Required floors:", requirements.requiredFloors);
+                const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
+                const remainingUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
+                console.log("📋 Required floor units:", requiredFloorUnits.length);
+                console.log("📋 Remaining units:", remainingUnits.length);
+                
+                // Sort required floor units by the scenario's logic
+                requiredFloorUnits.sort(sortFn);
+                remainingUnits.sort(sortFn);
+                
+                availableUnits = [...requiredFloorUnits, ...remainingUnits];
+            } else {
+                availableUnits.sort(sortFn);
+            }
+
+            let selectedUnits = [];
+            
+            // Different strategies for each scenario
+            if (title === "Exact Target Match") {
+                // Use the optimal combination finder
+                selectedUnits = findBestCombination(availableUnits, requirements.targetSF);
+            } else if (title === "Minimum Units Strategy") {
+                // Force using larger units by limiting to top 50% largest units
+                const largeUnits = availableUnits.slice(0, Math.ceil(availableUnits.length * 0.5));
+                selectedUnits = findBestCombination(largeUnits, requirements.targetSF);
+            } else if (title === "Maximum Affordability") {
+                // Force using smaller units by limiting to bottom 50% smallest units
+                const smallUnits = availableUnits.slice(-Math.ceil(availableUnits.length * 0.5));
+                selectedUnits = findBestCombination(smallUnits, requirements.targetSF);
+            } else if (title === "Balanced Floor Distribution") {
+                // Prioritize units from required floors, then mix with other floors
+                const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
+                const otherFloorUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
+                
+                // Try to get at least 2 units from required floors, then fill with others
+                let combination = [];
+                if (requiredFloorUnits.length >= 2) {
+                    combination = requiredFloorUnits.slice(0, 2);
+                    const remainingSF = requirements.targetSF - combination.reduce((sum, u) => sum + u.sf, 0);
+                    if (remainingSF > 0) {
+                        const additionalUnits = findBestCombination(otherFloorUnits, remainingSF);
+                        combination = [...combination, ...additionalUnits];
+                    }
+                } else {
+                    combination = findBestCombination(availableUnits, requirements.targetSF);
+                }
+                selectedUnits = combination;
+            }
+            
+            const totalSF = selectedUnits.reduce((sum, unit) => sum + unit.sf, 0);
+            console.log("✅ Selected units:", selectedUnits.length, "Total SF:", totalSF);
+            
+            // Assign AMI levels based on distribution
+            const amiLevels = requirements.amiDistribution || [40];
+            console.log("🎯 AMI levels to assign:", amiLevels);
+            
+            selectedUnits.forEach((unit, index) => {
+                if (amiLevels.length === 2) {
+                    // Mixed distribution: 20% at first AMI level, 80% at second AMI level
+                    const threshold = Math.floor(selectedUnits.length * 0.2); // 20% threshold, use floor to not exceed
+                    if (index < threshold) {
+                        unit.amiLevel = amiLevels[0]; // First AMI level (e.g., 40%)
+                        console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (20% group, index ${index})`);
+                    } else {
+                        unit.amiLevel = amiLevels[1]; // Second AMI level (e.g., 60%)
+                        console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (80% group, index ${index})`);
+                    }
+                } else {
+                    // Single AMI level: use modulo to cycle through if multiple levels
+                    const amiIndex = index % amiLevels.length;
+                    unit.amiLevel = amiLevels[amiIndex];
+                    console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (index ${index}, amiIndex ${amiIndex})`);
+                }
+            });
+
+            return { title, reasoning, units: selectedUnits, totalSF };
+        }
+
+        function findBestCombination(units, targetSF) {
+            console.log("🔍 findBestCombination:", targetSF, "SF target");
+            const tolerance = 50; // Reduced tolerance to ±50 sf for precision
+            let bestCombination = [];
+            let bestDifference = Infinity;
+            let bestTotalSF = 0;
+
+            // Try all possible combinations more systematically
+            const maxUnitsToTry = Math.min(units.length, 10); // Increased to 10 units max
+            
+            // Try combinations of different sizes
+            for (let count = 1; count <= maxUnitsToTry; count++) {
+                // Generate all possible combinations of this size
+                const combinations = generateCombinations(units, count);
+                console.log(`🔍 Testing ${combinations.length} combinations of ${count} units`);
+                
+                for (const combination of combinations) {
+                    const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
+                    const difference = Math.abs(totalSF - targetSF);
+
+                    // Priority 1: Find combinations that meet or exceed target SF within tolerance
+                    if (totalSF >= targetSF && difference <= tolerance) {
+                        if (difference < bestDifference || (difference === bestDifference && totalSF < bestTotalSF)) {
+                            bestCombination = combination;
+                            bestDifference = difference;
+                            bestTotalSF = totalSF;
+                            console.log("🎯 Found valid combination (meets target):", count, "units,", totalSF, "SF, diff:", difference);
+                        }
+                    }
+                }
+            }
+
+            // If no combination meets the target within tolerance, find the closest that exceeds it
+            if (bestCombination.length === 0) {
+                console.log("⚠️ No combination meets target within tolerance, finding closest that exceeds target");
+                for (let count = 1; count <= maxUnitsToTry; count++) {
+                    const combinations = generateCombinations(units, count);
+                    for (const combination of combinations) {
+                        const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
+                        
+                        if (totalSF >= targetSF) {
+                            const difference = totalSF - targetSF;
+                            if (difference < bestDifference) {
+                                bestCombination = combination;
+                                bestDifference = difference;
+                                bestTotalSF = totalSF;
+                                console.log("🎯 Found closest combination that exceeds target:", count, "units,", totalSF, "SF, diff:", difference);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // If still no combination exceeds target, find the closest overall
+            if (bestCombination.length === 0) {
+                console.log("⚠️ No combination exceeds target, finding closest overall");
+                for (let count = 1; count <= maxUnitsToTry; count++) {
+                    const combinations = generateCombinations(units, count);
+                    for (const combination of combinations) {
+                        const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
+                        const difference = Math.abs(totalSF - targetSF);
+
+                        if (difference < bestDifference) {
+                            bestCombination = combination;
+                            bestDifference = difference;
+                            bestTotalSF = totalSF;
+                            console.log("🎯 Found closest combination overall:", count, "units,", totalSF, "SF, diff:", difference);
+                        }
+                    }
+                }
+            }
+
+            console.log("✅ Final combination:", bestCombination.length, "units, total SF:", bestTotalSF, "target:", targetSF, "difference:", bestTotalSF - targetSF);
+            return bestCombination;
+        }
+
+        // Helper function to generate all combinations of a given size
+        function generateCombinations(units, size) {
+            if (size === 0) return [[]];
+            if (units.length === 0) return [];
+            
+            const combinations = [];
+            
+            function backtrack(start, current) {
+                if (current.length === size) {
+                    combinations.push([...current]);
+                    return;
+                }
+                
+                for (let i = start; i < units.length; i++) {
+                    current.push(units[i]);
+                    backtrack(i + 1, current);
+                    current.pop();
+                }
+            }
+            
+            backtrack(0, []);
+            return combinations;
+        }
+
+        function normalizeAndExtractUnits(jsonData) {
+            console.log("🔧 normalizeAndExtractUnits called");
+            if (!jsonData || jsonData.length === 0) {
+                console.log("❌ No JSON data provided");
+                return null;
+            }
+
+            console.log("📊 First row keys:", Object.keys(jsonData[0]));
+            console.log("📊 First row data:", jsonData[0]);
+            console.log("📊 Total rows:", jsonData.length);
+
+            const units = [];
+            // Expanded column name variations
+            const sfColumns = [
+                'SF', 'sf', 'SQUARE_FEET', 'square_feet', 'NET SF', 'NET_SF', 'sqft', 'SQFT',
+                'Square Feet', 'square feet', 'NET SF', 'Net SF', 'net sf', 'NET_SQFT', 'net_sqft',
+                'SQUARE_FT', 'square_ft', 'SQ_FT', 'sq_ft', 'AREA', 'area', 'SIZE', 'size'
+            ];
+            const bedColumns = [
+                'BED', 'bed', 'BEDROOMS', 'bedrooms', 'BEDS', 'beds',
+                'Bedrooms', 'BEDROOM', 'bedroom', 'BED_COUNT', 'bed_count', 'ROOMS', 'rooms'
+            ];
+            const floorColumns = [
+                'FLOOR', 'floor', 'LEVEL', 'level',
+                'FLOOR_NUM', 'floor_num', 'LEVEL_NUM', 'level_num', 'STORY', 'story', 'STORIES', 'stories'
+            ];
+            const unitColumns = [
+                'UNIT', 'unit', 'UNIT_NUMBER', 'unit_number', 'APT', 'apt',
+                'APARTMENT', 'apartment', 'UNIT_ID', 'unit_id', 'NUMBER', 'number', 'ID', 'id'
+            ];
+
+            console.log("🔍 Looking for SF columns:", sfColumns);
+            console.log("🔍 Looking for BED columns:", bedColumns);
+            console.log("🔍 Looking for FLOOR columns:", floorColumns);
+            console.log("🔍 Looking for UNIT columns:", unitColumns);
+
+            // Check what columns are actually available
+            const availableColumns = Object.keys(jsonData[0]);
+            console.log("📋 Available columns in Excel:", availableColumns);
+            
+            // Find which columns match our patterns
+            const foundSfColumn = availableColumns.find(col => sfColumns.some(sfCol => col.toLowerCase().includes(sfCol.toLowerCase())));
+            const foundBedColumn = availableColumns.find(col => bedColumns.some(bedCol => col.toLowerCase().includes(bedCol.toLowerCase())));
+            const foundFloorColumn = availableColumns.find(col => floorColumns.some(floorCol => col.toLowerCase().includes(floorCol.toLowerCase())));
+            const foundUnitColumn = availableColumns.find(col => unitColumns.some(unitCol => col.toLowerCase().includes(unitCol.toLowerCase())));
+            
+            console.log("🎯 Found columns:", {
+                sf: foundSfColumn,
+                bed: foundBedColumn,
+                floor: foundFloorColumn,
+                unit: foundUnitColumn
+            });
+
+            console.log("📊 Processing", jsonData.length, "rows");
+            jsonData.forEach((row, index) => {
+                console.log(`📋 Row ${index + 1}:`, row);
+                let sf = null, bed = null, floor = null, unit = null;
+
+                // Find SF column using exact match first, then pattern matching
+                if (foundSfColumn) {
+                    sf = parseFloat(row[foundSfColumn]);
+                    console.log(`✅ Found SF in column "${foundSfColumn}":`, sf);
+                } else {
+                    // Fallback to original method
+                    for (const col of sfColumns) {
+                        if (row[col] !== undefined && row[col] !== null) {
+                            sf = parseFloat(row[col]);
+                            console.log(`✅ Found SF in column "${col}":`, sf);
+                            break;
+                        }
+                    }
+                }
+
+                // Find BED column
+                if (foundBedColumn) {
+                    bed = parseInt(row[foundBedColumn]);
+                    console.log(`✅ Found BED in column "${foundBedColumn}":`, bed);
+                } else {
+                    for (const col of bedColumns) {
+                        if (row[col] !== undefined && row[col] !== null) {
+                            bed = parseInt(row[col]);
+                            console.log(`✅ Found BED in column "${col}":`, bed);
+                            break;
+                        }
+                    }
+                }
+
+                // Find FLOOR column
+                if (foundFloorColumn) {
+                    floor = parseInt(row[foundFloorColumn]);
+                    console.log(`✅ Found FLOOR in column "${foundFloorColumn}":`, floor);
+                } else {
+                    for (const col of floorColumns) {
+                        if (row[col] !== undefined && row[col] !== null) {
+                            floor = parseInt(row[col]);
+                            console.log(`✅ Found FLOOR in column "${col}":`, floor);
+                            break;
+                        }
+                    }
+                }
+
+                // Find UNIT column
+                if (foundUnitColumn) {
+                    unit = String(row[foundUnitColumn]);
+                    console.log(`✅ Found UNIT in column "${foundUnitColumn}":`, unit);
+                } else {
+                    for (const col of unitColumns) {
+                        if (row[col] !== undefined && row[col] !== null) {
+                            unit = String(row[col]);
+                            console.log(`✅ Found UNIT in column "${col}":`, unit);
+                            break;
+                        }
+                    }
+                }
+
+                console.log(`📊 Row ${index + 1} extracted:`, { sf, bed, floor, unit });
+
+                if (sf && !isNaN(sf) && sf > 0) {
+                    units.push({
+                        sf: sf,
+                        bed: bed || 0,
+                        floor: floor || 1,
+                        unit: unit || `Unit_${index + 1}`,
+                        amiLevel: 40 // Default AMI level
+                    });
+                    console.log("✅ Unit extracted:", { sf, bed, floor, unit });
+                } else {
+                    console.log("❌ Invalid unit data - SF issue:", { sf, isNaN: isNaN(sf), isPositive: sf > 0 });
+                }
+            });
+
+            console.log("🏢 Total valid units extracted:", units.length);
+            if (units.length === 0) {
+                console.log("❌ No valid units found. All rows failed validation.");
+                console.log("💡 Common issues:");
+                console.log("   - SF column not found or empty");
+                console.log("   - SF values are not numbers");
+                console.log("   - SF values are 0 or negative");
+                console.log("📋 All available columns:", availableColumns);
+                console.log("🔍 Try looking for columns containing these keywords:");
+                console.log("   - Square footage: 'sf', 'square', 'feet', 'area', 'size'");
+                console.log("   - Bedrooms: 'bed', 'room', 'br'");
+                console.log("   - Floor: 'floor', 'level', 'story'");
+                console.log("   - Unit: 'unit', 'apt', 'number', 'id'");
+            }
+            return units.length > 0 ? units : null;
+        }
+
+        function getAMIColor(amiLevel) {
+            if (amiLevel <= 40) return '#e74c3c'; // Red
+            if (amiLevel <= 50) return '#f39c12'; // Orange
+            if (amiLevel <= 60) return '#f1c40f'; // Yellow
+            if (amiLevel <= 70) return '#2ecc71'; // Light Green
+            return '#27ae60'; // Green
+        }
+
+    </script>
+</body>
+</html>
