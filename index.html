@@ -516,7 +516,8 @@
 
         function findBestCombination(units, targetSF) {
             console.log("🔍 findBestCombination:", targetSF, "SF target");
-            const tolerance = 50; // Reduced tolerance to ±50 sf for precision
+            // Scale tolerance based on target size - larger targets need larger tolerance
+            const tolerance = Math.max(50, Math.min(500, targetSF * 0.02)); // 2% of target or 50-500 SF
             let bestCombination = [];
             let bestDifference = Infinity;
             let bestTotalSF = 0;
@@ -527,13 +528,13 @@
             console.log(`📊 Average unit size: ${avgUnitSize.toFixed(1)} sf`);
             console.log(`📊 Estimated units needed: ${estimatedUnitsNeeded}`);
             
-            // Scale limits based on target size
-            const maxUnitsToConsider = Math.min(units.length, Math.max(30, estimatedUnitsNeeded * 2));
+            // Scale limits based on target size - much more aggressive for large targets
+            const maxUnitsToConsider = Math.min(units.length, Math.max(50, estimatedUnitsNeeded * 3));
             const limitedUnits = units.slice(0, maxUnitsToConsider);
             console.log(`🔍 Using ${limitedUnits.length} units out of ${units.length} total units`);
             
-            // Scale max units to try based on target
-            const maxUnitsToTry = Math.min(limitedUnits.length, Math.max(15, estimatedUnitsNeeded + 5));
+            // Scale max units to try based on target - much more aggressive
+            const maxUnitsToTry = Math.min(limitedUnits.length, Math.max(25, estimatedUnitsNeeded + 10));
             console.log(`🔍 Max units to try: ${maxUnitsToTry}`);
             
             // Try different combination sizes with early termination
@@ -565,8 +566,8 @@
                     }
                 }
                 
-                // Early termination if we found a good solution
-                if (bestCombination.length > 0 && bestDifference <= tolerance) {
+                // Only early terminate for very large targets if we found a good solution
+                if (bestCombination.length > 0 && bestDifference <= tolerance && targetSF < 10000) {
                     console.log("🎯 Early termination - good solution found!");
                     break;
                 }
@@ -622,8 +623,8 @@
             if (units.length === 0) return [];
             
             const combinations = [];
-            // Scale combination limit based on target size
-            const maxCombinations = Math.max(1000, Math.min(5000, size * 200)); // More combinations for larger targets
+            // Scale combination limit based on target size - much more aggressive for large targets
+            const maxCombinations = Math.max(2000, Math.min(10000, size * 500)); // Much more combinations for larger targets
             
             function smartBacktrack(start, current, currentSF) {
                 if (combinations.length >= maxCombinations) {
