@@ -329,13 +329,19 @@
                 3. If you can extract requirements, your ONLY response must be "ACTION_CALCULATE" followed by the JSON: {"targetSF": ..., "amiDistribution": [...], "requiredFloors": [...]}.
                 4. If missing target SF, you may ask for that one thing.
                 
-                **EXAMPLES:**
-                - "2,043.3 sf of affordable is required. 40% AMI units are required. There should be an affordable unit on floors 5 and 6."
-                  → {"targetSF": 2043.3, "amiDistribution": [40, 60], "requiredFloors": [5, 6]}
-                - "I need 1500 sf at 50% AMI"
-                  → {"targetSF": 1500, "amiDistribution": [50], "requiredFloors": []}
-                - "40% AMI is required, average should be 60% AMI"
-                  → {"targetSF": [extract from context], "amiDistribution": [40, 60], "requiredFloors": []}
+                                 **EXAMPLES:**
+                 - "2,043.3 sf of affordable is required. 40% AMI is required it means that the average should still be 60% AMI, but 20% should be at 40% AMI. There should be an affordable unit on floors 5 and 6."
+                   → {"targetSF": 2043.3, "amiDistribution": [40, 60], "requiredFloors": [5, 6]}
+                 - "I need 1500 sf at 50% AMI"
+                   → {"targetSF": 1500, "amiDistribution": [50], "requiredFloors": []}
+                 - "40% AMI is required, average should be 60% AMI"
+                   → {"targetSF": [extract from context], "amiDistribution": [40, 60], "requiredFloors": []}
+                 
+                 **CRITICAL RULES:**
+                 - ALWAYS extract the exact targetSF number from user's message
+                 - ALWAYS include requiredFloors if mentioned
+                 - For mixed AMI: use [40, 60] when user mentions "40% AMI is required" with "average should still be 60% AMI"
+                 - For single AMI: use [40] when user says "40% AMI units are required"
               `;
          }
 
@@ -459,115 +465,160 @@
                 unit.amiLevel = parseInt(unit.amiLevel) || 40;
             });
 
-            return { title, reasoning, units: selectedUnits, totalSF };
+                         // FINAL BULLETPROOF CHECK: Never return under target SF
+             if (totalSF < requirements.targetSF) {
+                 console.warn(`WARNING: Scenario ${title} is under target SF (${totalSF} < ${requirements.targetSF}). Adding more units...`);
+                 
+                 // Add more units until we meet target
+                 const remainingUnits = state.buildingData.filter(u => !selectedUnits.includes(u));
+                 for (const unit of remainingUnits) {
+                     selectedUnits.push(unit);
+                     totalSF += unit.sf;
+                     if (totalSF >= requirements.targetSF) break;
+                 }
+             }
+             
+             return { title, reasoning, units: selectedUnits, totalSF };
         }
 
         // Optimized algorithms that scale better
 
-        function findOptimalCombinationDP(units, targetSF) {
-            // Simplified approach for large targets - much more efficient
-            const sorted = [...units].sort((a, b) => a.sf - b.sf);
-            const selected = [];
-            let currentSF = 0;
-            const tolerance = Math.max(100, targetSF * 0.05); // 5% tolerance or 100 SF
-            
-            // Simple greedy approach with backtracking for large targets
-            for (const unit of sorted) {
-                if (currentSF + unit.sf <= targetSF + tolerance) {
-                    selected.push(unit);
-                    currentSF += unit.sf;
-                    
-                    // Early termination if we're close enough
-                    if (Math.abs(currentSF - targetSF) <= tolerance) {
-                        break;
-                    }
-                }
-            }
-            
-            // If we're under target, try to add more units
-            if (currentSF < targetSF) {
-                for (const unit of sorted) {
-                    if (!selected.includes(unit) && currentSF + unit.sf <= targetSF + tolerance) {
-                        selected.push(unit);
-                        currentSF += unit.sf;
-                        if (currentSF >= targetSF) break;
-                    }
-                }
-            }
-            
-            return selected;
-        }
+                 function findOptimalCombinationDP(units, targetSF) {
+             // BULLETPROOF: Always meet or exceed target SF
+             const sorted = [...units].sort((a, b) => a.sf - b.sf);
+             const selected = [];
+             let currentSF = 0;
+             const tolerance = Math.max(100, targetSF * 0.05); // 5% tolerance or 100 SF
+             
+             // First pass: get as close as possible to target
+             for (const unit of sorted) {
+                 if (currentSF + unit.sf <= targetSF + tolerance) {
+                     selected.push(unit);
+                     currentSF += unit.sf;
+                 }
+             }
+             
+             // CRITICAL: If we're under target, keep adding units until we meet it
+             if (currentSF < targetSF) {
+                 for (const unit of sorted) {
+                     if (!selected.includes(unit)) {
+                         selected.push(unit);
+                         currentSF += unit.sf;
+                         if (currentSF >= targetSF) break; // STOP when we meet target
+                     }
+                 }
+             }
+             
+             // FINAL CHECK: If still under target, add more units
+             if (currentSF < targetSF) {
+                 const remaining = sorted.filter(u => !selected.includes(u));
+                 for (const unit of remaining) {
+                     selected.push(unit);
+                     currentSF += unit.sf;
+                     if (currentSF >= targetSF) break;
+                 }
+             }
+             
+             return selected;
+         }
 
-        function findMinimumUnitsGreedy(units, targetSF) {
-            // Greedy algorithm: largest units first
-            const sorted = [...units].sort((a, b) => b.sf - a.sf);
-            const selected = [];
-            let currentSF = 0;
-            
-            for (const unit of sorted) {
-                if (currentSF >= targetSF) break;
-                if (selected.length >= 15) break; // Reasonable limit
-                
-                selected.push(unit);
-                currentSF += unit.sf;
-            }
-            
-            return selected;
-        }
+                 function findMinimumUnitsGreedy(units, targetSF) {
+             // BULLETPROOF: Always meet or exceed target SF
+             const sorted = [...units].sort((a, b) => b.sf - a.sf);
+             const selected = [];
+             let currentSF = 0;
+             
+             // Add largest units until we meet target
+             for (const unit of sorted) {
+                 selected.push(unit);
+                 currentSF += unit.sf;
+                 if (currentSF >= targetSF) break; // STOP when we meet target
+                 if (selected.length >= 20) break; // Safety limit
+             }
+             
+             // If still under target, add more units
+             if (currentSF < targetSF) {
+                 const remaining = sorted.filter(u => !selected.includes(u));
+                 for (const unit of remaining) {
+                     selected.push(unit);
+                     currentSF += unit.sf;
+                     if (currentSF >= targetSF) break;
+                 }
+             }
+             
+             return selected;
+         }
 
-        function findMaximumUnitsGreedy(units, targetSF) {
-            // Greedy algorithm: smallest units first
-            const sorted = [...units].sort((a, b) => a.sf - b.sf);
-            const selected = [];
-            let currentSF = 0;
-            
-            for (const unit of sorted) {
-                if (currentSF + unit.sf > targetSF + 100) break; // Small tolerance
-                if (selected.length >= 20) break; // Reasonable limit
-                
-                selected.push(unit);
-                currentSF += unit.sf;
-                
-                if (currentSF >= targetSF) break;
-            }
-            
-            return selected;
-        }
+                 function findMaximumUnitsGreedy(units, targetSF) {
+             // BULLETPROOF: Always meet or exceed target SF
+             const sorted = [...units].sort((a, b) => a.sf - b.sf);
+             const selected = [];
+             let currentSF = 0;
+             
+             // Add smallest units until we meet target
+             for (const unit of sorted) {
+                 selected.push(unit);
+                 currentSF += unit.sf;
+                 if (currentSF >= targetSF) break; // STOP when we meet target
+                 if (selected.length >= 25) break; // Safety limit
+             }
+             
+             // If still under target, add more units
+             if (currentSF < targetSF) {
+                 const remaining = sorted.filter(u => !selected.includes(u));
+                 for (const unit of remaining) {
+                     selected.push(unit);
+                     currentSF += unit.sf;
+                     if (currentSF >= targetSF) break;
+                 }
+             }
+             
+             return selected;
+         }
 
-        function findBalancedFloorCombination(units, targetSF, requiredFloors) {
-            // Ensure at least one unit from each required floor, then optimize
-            const requiredFloorUnits = units.filter(u => requiredFloors.includes(u.floor));
-            const otherUnits = units.filter(u => !requiredFloors.includes(u.floor));
-            
-            let selected = [];
-            let currentSF = 0;
-            
-            // Add one unit from each required floor (smallest first for balance)
-            const sortedRequired = requiredFloorUnits.sort((a, b) => a.sf - b.sf);
-            const usedFloors = new Set();
-            
-            for (const unit of sortedRequired) {
-                if (!usedFloors.has(unit.floor) && selected.length < 10) {
-                    selected.push(unit);
-                    currentSF += unit.sf;
-                    usedFloors.add(unit.floor);
-                }
-            }
-            
-            // Fill remaining with best fit from all available units
-            const remaining = [...requiredFloorUnits.filter(u => !selected.includes(u)), ...otherUnits];
-            remaining.sort((a, b) => a.sf - b.sf);
-            
-            for (const unit of remaining) {
-                if (currentSF >= targetSF) break;
-                if (selected.length >= 15) break;
-                
-                selected.push(unit);
-                currentSF += unit.sf;
-            }
-            
-            return selected;
-        }
+                 function findBalancedFloorCombination(units, targetSF, requiredFloors) {
+             // BULLETPROOF: Always meet or exceed target SF with required floors
+             const requiredFloorUnits = units.filter(u => requiredFloors.includes(u.floor));
+             const otherUnits = units.filter(u => !requiredFloors.includes(u.floor));
+             
+             let selected = [];
+             let currentSF = 0;
+             
+             // CRITICAL: Add one unit from each required floor first
+             const sortedRequired = requiredFloorUnits.sort((a, b) => a.sf - b.sf);
+             const usedFloors = new Set();
+             
+             for (const unit of sortedRequired) {
+                 if (!usedFloors.has(unit.floor)) {
+                     selected.push(unit);
+                     currentSF += unit.sf;
+                     usedFloors.add(unit.floor);
+                 }
+             }
+             
+             // Fill remaining with best fit from all available units
+             const remaining = [...requiredFloorUnits.filter(u => !selected.includes(u)), ...otherUnits];
+             remaining.sort((a, b) => a.sf - b.sf);
+             
+             for (const unit of remaining) {
+                 selected.push(unit);
+                 currentSF += unit.sf;
+                 if (currentSF >= targetSF) break; // STOP when we meet target
+                 if (selected.length >= 20) break; // Safety limit
+             }
+             
+             // If still under target, add more units
+             if (currentSF < targetSF) {
+                 const allRemaining = units.filter(u => !selected.includes(u));
+                 for (const unit of allRemaining) {
+                     selected.push(unit);
+                     currentSF += unit.sf;
+                     if (currentSF >= targetSF) break;
+                 }
+             }
+             
+             return selected;
+         }
 
         function displayResults(scenarios) {
             let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results</h3>';
