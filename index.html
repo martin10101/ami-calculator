@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimized AMI Calculator v2.0 - ULTRA FAST</title>
+    <title>BULLETPROOF AMI Calculator v3.0 - NEVER UNDERSHOOT</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -120,7 +120,7 @@
     </style>
 </head>
 <body>
-    <header><h1>Optimized AMI Calculator</h1></header>
+    <header><h1>BULLETPROOF AMI Calculator v3.0</h1></header>
     <main>
         <div id="chat-window"></div>
         <div id="api-key-container" class="input-container">
@@ -366,25 +366,25 @@
                     { name: "Balanced Floor Distribution", strategy: "balanced_floors", description: "Includes required floors, then fills remainder" }
                 ];
 
-                function processNextScenario() {
-                    if (scenarioIndex >= scenarioConfigs.length) {
-                        displayResults(scenarios);
-                        resolve();
-                        return;
-                    }
+                                 function processNextScenario() {
+                     if (scenarioIndex >= scenarioConfigs.length) {
+                         displayResults(scenarios, requirements);
+                         resolve();
+                         return;
+                     }
 
-                    const config = scenarioConfigs[scenarioIndex];
-                    const scenario = generateOptimizedScenario(config.name, config.description, requirements, config.strategy);
-                    scenarios.push(scenario);
-                    scenarioIndex++;
+                     const config = scenarioConfigs[scenarioIndex];
+                     const scenario = generateOptimizedScenario(config.name, config.description, requirements, config.strategy);
+                     scenarios.push(scenario);
+                     scenarioIndex++;
 
-                    // Use setTimeout to prevent blocking
-                    setTimeout(processNextScenario, 10);
-                }
+                     // Use setTimeout to prevent blocking
+                     setTimeout(processNextScenario, 10);
+                 }
 
-                processNextScenario();
-            });
-        }
+                 processNextScenario();
+             });
+         }
 
         function generateOptimizedScenario(title, reasoning, requirements, strategy) {
             let availableUnits = [...state.buildingData];
@@ -620,12 +620,12 @@
              return selected;
          }
 
-        function displayResults(scenarios) {
-            let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results</h3>';
-            scenarios.forEach((scenario, index) => {
-                resultHTML += `<h4>${index + 1}. ${scenario.title}</h4>`;
-                resultHTML += `<p><em>${scenario.reasoning}</em></p>`;
-                resultHTML += `<p><strong>Result:</strong> ${scenario.units.length} units, ${scenario.totalSF.toFixed(1)} sf</p>`;
+         function displayResults(scenarios, requirements) {
+             let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results - BULLETPROOF v3.0</h3>';
+             scenarios.forEach((scenario, index) => {
+                 resultHTML += `<h4>${index + 1}. ${scenario.title}</h4>`;
+                 resultHTML += `<p><em>${scenario.reasoning}</em></p>`;
+                 resultHTML += `<p><strong>Result:</strong> ${scenario.units.length} units, ${scenario.totalSF.toFixed(1)} sf (Target: ${requirements.targetSF} sf)</p>`;
                 resultHTML += '<ul>';
                 scenario.units.forEach(unit => {
                     const amiColor = getAMIColor(unit.amiLevel);
