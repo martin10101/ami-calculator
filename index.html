@@ -307,11 +307,12 @@
                 - **NEVER** ask for external documents.
                 - **MAKE REASONABLE ASSUMPTIONS.** 
                 
-                **AMI DISTRIBUTION RULES:**
-                - When user says "40% AMI is required" with "average should still be 60% AMI", this means:
-                  * 20% of units at 40% AMI (for deeper affordability)
-                  * 80% of units at 60% AMI (to achieve 60% average)
-                - When user says just "40% AMI units", assume 100% at 40% AMI
+                                 **AMI DISTRIBUTION RULES:**
+                 - When user says "40% AMI is required" with "average should still be 60% AMI", this means:
+                   * 20% of units at 40% AMI (for deeper affordability)
+                   * 80% of units at 60% AMI (to achieve 60% average)
+                 - When user says just "40% AMI units", assume 100% at 40% AMI
+                 - When user says "40% AMI units are required", assume 100% at 40% AMI
                 
                 **CONTEXT:**
                 - Building Data Summary: ${JSON.stringify(buildingDataSummary)}.
@@ -447,11 +448,15 @@
             const amiLevels = requirements.amiDistribution || [40];
             selectedUnits.forEach((unit, index) => {
                 if (amiLevels.length === 2) {
+                    // For mixed distribution: 20% at first AMI level, 80% at second AMI level
                     const threshold = Math.floor(selectedUnits.length * 0.2);
                     unit.amiLevel = index < threshold ? amiLevels[0] : amiLevels[1];
                 } else {
+                    // For single AMI level: all units get the same AMI
                     unit.amiLevel = amiLevels[0];
                 }
+                // Ensure AMI level is always a number
+                unit.amiLevel = parseInt(unit.amiLevel) || 40;
             });
 
             return { title, reasoning, units: selectedUnits, totalSF };
