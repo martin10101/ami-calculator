@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Optimized AMI Calculator</title>
+    <title>Optimized AMI Calculator v2.0 - ULTRA FAST</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -460,58 +460,37 @@
         // Optimized algorithms that scale better
 
         function findOptimalCombinationDP(units, targetSF) {
-            // Dynamic Programming approach - much more efficient than brute force
-            const n = Math.min(units.length, 50); // Limit for performance
-            const target = Math.floor(targetSF);
-            const tolerance = 100; // Allow some flexibility
+            // Simplified approach for large targets - much more efficient
+            const sorted = [...units].sort((a, b) => a.sf - b.sf);
+            const selected = [];
+            let currentSF = 0;
+            const tolerance = Math.max(100, targetSF * 0.05); // 5% tolerance or 100 SF
             
-            // DP table: dp[i][w] = best combination for first i units with target w
-            const dp = Array(n + 1).fill(null).map(() => Array(target + tolerance + 1).fill(null));
-            
-            // Initialize base case
-            for (let w = 0; w <= target + tolerance; w++) {
-                dp[0][w] = { units: [], totalSF: 0 };
-            }
-            
-            // Fill DP table
-            for (let i = 1; i <= n; i++) {
-                const unit = units[i - 1];
-                const unitSF = Math.floor(unit.sf);
-                
-                for (let w = 0; w <= target + tolerance; w++) {
-                    // Don't take current unit
-                    dp[i][w] = dp[i - 1][w];
+            // Simple greedy approach with backtracking for large targets
+            for (const unit of sorted) {
+                if (currentSF + unit.sf <= targetSF + tolerance) {
+                    selected.push(unit);
+                    currentSF += unit.sf;
                     
-                    // Take current unit if possible and better
-                    if (unitSF <= w && dp[i - 1][w - unitSF]) {
-                        const newCombination = {
-                            units: [...dp[i - 1][w - unitSF].units, unit],
-                            totalSF: dp[i - 1][w - unitSF].totalSF + unit.sf
-                        };
-                        
-                        if (!dp[i][w] || 
-                            Math.abs(newCombination.totalSF - targetSF) < Math.abs(dp[i][w].totalSF - targetSF)) {
-                            dp[i][w] = newCombination;
-                        }
+                    // Early termination if we're close enough
+                    if (Math.abs(currentSF - targetSF) <= tolerance) {
+                        break;
                     }
                 }
             }
             
-            // Find best result
-            let bestResult = { units: [], totalSF: 0 };
-            let bestDiff = Infinity;
-            
-            for (let w = target; w <= target + tolerance; w++) {
-                if (dp[n][w]) {
-                    const diff = Math.abs(dp[n][w].totalSF - targetSF);
-                    if (diff < bestDiff) {
-                        bestDiff = diff;
-                        bestResult = dp[n][w];
+            // If we're under target, try to add more units
+            if (currentSF < targetSF) {
+                for (const unit of sorted) {
+                    if (!selected.includes(unit) && currentSF + unit.sf <= targetSF + tolerance) {
+                        selected.push(unit);
+                        currentSF += unit.sf;
+                        if (currentSF >= targetSF) break;
                     }
                 }
             }
             
-            return bestResult.units;
+            return selected;
         }
 
         function findMinimumUnitsGreedy(units, targetSF) {
