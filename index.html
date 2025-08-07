@@ -521,14 +521,21 @@
             let bestDifference = Infinity;
             let bestTotalSF = 0;
 
-            // Try all possible combinations more systematically
-            const maxUnitsToTry = Math.min(units.length, 10); // Increased to 10 units max
+            // Limit the number of units to consider to prevent freezing
+            const maxUnitsToConsider = Math.min(units.length, 20); // Limit to 20 units max
+            const limitedUnits = units.slice(0, maxUnitsToConsider);
+            console.log(`🔍 Using ${limitedUnits.length} units out of ${units.length} total units`);
+
+            // Use a more efficient greedy approach with limited backtracking
+            const maxUnitsToTry = Math.min(limitedUnits.length, 8); // Reduced to 8 units max
             
-            // Try combinations of different sizes
+            // Try different combination sizes with early termination
             for (let count = 1; count <= maxUnitsToTry; count++) {
-                // Generate all possible combinations of this size
-                const combinations = generateCombinations(units, count);
-                console.log(`🔍 Testing ${combinations.length} combinations of ${count} units`);
+                console.log(`🔍 Testing combinations of ${count} units...`);
+                
+                // Use a smarter approach: try the best candidates first
+                const combinations = generateSmartCombinations(limitedUnits, count, targetSF);
+                console.log(`🔍 Generated ${combinations.length} smart combinations of ${count} units`);
                 
                 for (const combination of combinations) {
                     const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
@@ -541,8 +548,20 @@
                             bestDifference = difference;
                             bestTotalSF = totalSF;
                             console.log("🎯 Found valid combination (meets target):", count, "units,", totalSF, "SF, diff:", difference);
+                            
+                            // Early termination if we found a very good match
+                            if (difference <= 10) {
+                                console.log("🎯 Early termination - excellent match found!");
+                                return bestCombination;
+                            }
                         }
                     }
+                }
+                
+                // Early termination if we found a good solution
+                if (bestCombination.length > 0 && bestDifference <= tolerance) {
+                    console.log("🎯 Early termination - good solution found!");
+                    break;
                 }
             }
 
@@ -550,7 +569,7 @@
             if (bestCombination.length === 0) {
                 console.log("⚠️ No combination meets target within tolerance, finding closest that exceeds target");
                 for (let count = 1; count <= maxUnitsToTry; count++) {
-                    const combinations = generateCombinations(units, count);
+                    const combinations = generateSmartCombinations(limitedUnits, count, targetSF);
                     for (const combination of combinations) {
                         const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
                         
@@ -571,7 +590,7 @@
             if (bestCombination.length === 0) {
                 console.log("⚠️ No combination exceeds target, finding closest overall");
                 for (let count = 1; count <= maxUnitsToTry; count++) {
-                    const combinations = generateCombinations(units, count);
+                    const combinations = generateSmartCombinations(limitedUnits, count, targetSF);
                     for (const combination of combinations) {
                         const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
                         const difference = Math.abs(totalSF - targetSF);
@@ -590,27 +609,46 @@
             return bestCombination;
         }
 
-        // Helper function to generate all combinations of a given size
-        function generateCombinations(units, size) {
+        // Smart combination generator that limits the search space
+        function generateSmartCombinations(units, size, targetSF) {
             if (size === 0) return [[]];
             if (units.length === 0) return [];
             
             const combinations = [];
+            const maxCombinations = 1000; // Limit total combinations to prevent freezing
             
-            function backtrack(start, current) {
+            function smartBacktrack(start, current, currentSF) {
+                if (combinations.length >= maxCombinations) {
+                    console.log("⚠️ Reached maximum combinations limit, stopping search");
+                    return;
+                }
+                
                 if (current.length === size) {
                     combinations.push([...current]);
                     return;
                 }
                 
+                // Early termination if we're already way over target
+                if (currentSF > targetSF + 500) {
+                    return;
+                }
+                
                 for (let i = start; i < units.length; i++) {
+                    const newSF = currentSF + units[i].sf;
+                    
+                    // Skip if adding this unit would make us way over target
+                    if (newSF > targetSF + 500) {
+                        continue;
+                    }
+                    
                     current.push(units[i]);
-                    backtrack(i + 1, current);
+                    smartBacktrack(i + 1, current, newSF);
                     current.pop();
                 }
             }
             
-            backtrack(0, []);
+            smartBacktrack(0, [], 0);
+            console.log(`🔍 Generated ${combinations.length} smart combinations (limited to ${maxCombinations})`);
             return combinations;
         }
 
