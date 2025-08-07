@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BULLETPROOF AMI Calculator v4.0 - FORCE RULES</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>BULLETPROOF AMI Calculator v6.0 - FORCE RULES</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
@@ -120,7 +123,7 @@
     </style>
 </head>
 <body>
-    <header><h1>BULLETPROOF AMI Calculator v4.0</h1></header>
+    <header><h1>BULLETPROOF AMI Calculator v6.0</h1></header>
     <main>
         <div id="chat-window"></div>
         <div id="api-key-container" class="input-container">
@@ -258,6 +261,7 @@
                     const jsonPart = responseText.substring(responseText.indexOf('{'));
                     try {
                         const requirements = JSON.parse(jsonPart);
+                        console.log('V5.0 - Parsed Requirements:', requirements);
                         await runAndDisplayScenariosAsync(requirements);
                     } catch (parseError) {
                         console.error("JSON parse error:", parseError);
@@ -307,11 +311,11 @@
                 - **NEVER** ask for external documents.
                 - **MAKE REASONABLE ASSUMPTIONS.** 
                 
-                                 **AMI DISTRIBUTION RULES:**
-                 - When user says "40% AMI is required" with "average should still be 60% AMI", this means:
-                   * 20% of units at 40% AMI (for deeper affordability)
-                   * 80% of units at 60% AMI (to achieve 60% average)
-                 - When user says just "40% AMI units", assume 100% at 40% AMI
+                **AMI DISTRIBUTION RULES:**
+                - When user says "40% AMI is required" with "average should still be 60% AMI", this means:
+                  * 20% of units at 40% AMI (for deeper affordability)
+                  * 80% of units at 60% AMI (to achieve 60% average)
+                - When user says just "40% AMI units", assume 100% at 40% AMI
                  - When user says "40% AMI units are required", assume 100% at 40% AMI
                 
                 **CONTEXT:**
@@ -329,13 +333,13 @@
                 3. If you can extract requirements, your ONLY response must be "ACTION_CALCULATE" followed by the JSON: {"targetSF": ..., "amiDistribution": [...], "requiredFloors": [...]}.
                 4. If missing target SF, you may ask for that one thing.
                 
-                                 **EXAMPLES:**
+                **EXAMPLES:**
                  - "2,043.3 sf of affordable is required. 40% AMI is required it means that the average should still be 60% AMI, but 20% should be at 40% AMI. There should be an affordable unit on floors 5 and 6."
-                   → {"targetSF": 2043.3, "amiDistribution": [40, 60], "requiredFloors": [5, 6]}
-                 - "I need 1500 sf at 50% AMI"
-                   → {"targetSF": 1500, "amiDistribution": [50], "requiredFloors": []}
-                 - "40% AMI is required, average should be 60% AMI"
-                   → {"targetSF": [extract from context], "amiDistribution": [40, 60], "requiredFloors": []}
+                  → {"targetSF": 2043.3, "amiDistribution": [40, 60], "requiredFloors": [5, 6]}
+                - "I need 1500 sf at 50% AMI"
+                  → {"targetSF": 1500, "amiDistribution": [50], "requiredFloors": []}
+                - "40% AMI is required, average should be 60% AMI"
+                  → {"targetSF": [extract from context], "amiDistribution": [40, 60], "requiredFloors": []}
                  
                  **CRITICAL RULES:**
                  - ALWAYS extract the exact targetSF number from user's message
@@ -395,15 +399,15 @@
             let availableUnits = [...state.buildingData];
             
                          // BULLETPROOF: ALWAYS respect required floors
-             if (requirements.requiredFloors && requirements.requiredFloors.length > 0) {
-                 const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
-                 const remainingUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
+            if (requirements.requiredFloors && requirements.requiredFloors.length > 0) {
+                const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
+                const remainingUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
                  
                  // CRITICAL: If no units on required floors, use all units but prioritize required floors
                  if (requiredFloorUnits.length === 0) {
                      console.warn(`WARNING: No units found on required floors ${requirements.requiredFloors}. Using all available units.`);
                      availableUnits = [...availableUnits];
-                 } else {
+            } else {
                      // Different sorting strategies
                      switch (strategy) {
                          case "exact":
@@ -425,8 +429,8 @@
                      }
                      
                      availableUnits = [...requiredFloorUnits, ...remainingUnits];
-                 }
-            } else {
+                    }
+                } else {
                 // Sort all units based on strategy
                 switch (strategy) {
                     case "exact":
@@ -462,16 +466,16 @@
             const totalSF = selectedUnits.reduce((sum, unit) => sum + unit.sf, 0);
             
                          // BULLETPROOF AMI DISTRIBUTION: ALWAYS respect the rules
-             const amiLevels = requirements.amiDistribution || [40];
+            const amiLevels = requirements.amiDistribution || [40];
              console.log(`Applying AMI distribution: ${amiLevels} to ${selectedUnits.length} units`);
-             
-             selectedUnits.forEach((unit, index) => {
-                 if (amiLevels.length === 2) {
+            
+            selectedUnits.forEach((unit, index) => {
+                if (amiLevels.length === 2) {
                      // For mixed distribution: 20% at first AMI level, 80% at second AMI level
                      const threshold = Math.floor(selectedUnits.length * 0.2);
                      unit.amiLevel = index < threshold ? amiLevels[0] : amiLevels[1];
                      console.log(`Unit ${index + 1}: ${unit.amiLevel}% AMI (threshold: ${threshold})`);
-                 } else {
+                    } else {
                      // For single AMI level: all units get the same AMI
                      unit.amiLevel = amiLevels[0];
                      console.log(`Unit ${index + 1}: ${unit.amiLevel}% AMI (single level)`);
@@ -492,8 +496,8 @@
                      if (totalSF >= requirements.targetSF) break;
                  }
              }
-             
-             return { title, reasoning, units: selectedUnits, totalSF };
+
+            return { title, reasoning, units: selectedUnits, totalSF };
         }
 
         // Optimized algorithms that scale better
@@ -636,7 +640,7 @@
          }
 
          function displayResults(scenarios, requirements) {
-             let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results - BULLETPROOF v4.0</h3>';
+             let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results - BULLETPROOF v6.0</h3>';
              scenarios.forEach((scenario, index) => {
                  resultHTML += `<h4>${index + 1}. ${scenario.title}</h4>`;
                  resultHTML += `<p><em>${scenario.reasoning}</em></p>`;
@@ -687,7 +691,7 @@
             const foundBedColumn = availableColumns.find(col => bedColumns.some(bedCol => col.toLowerCase().includes(bedCol.toLowerCase())));
             const foundFloorColumn = availableColumns.find(col => floorColumns.some(floorCol => col.toLowerCase().includes(floorCol.toLowerCase())));
             const foundUnitColumn = availableColumns.find(col => unitColumns.some(unitCol => col.toLowerCase().includes(unitCol.toLowerCase())));
-
+            
             jsonData.forEach((row, index) => {
                 let sf = null, bed = null, floor = null, unit = null;
 
@@ -720,4 +724,107 @@
 
     </script>
 </body>
+</html>
+
+                if (foundSfColumn) sf = parseFloat(row[foundSfColumn]);
+                if (foundBedColumn) bed = parseInt(row[foundBedColumn]);
+                if (foundFloorColumn) floor = parseInt(row[foundFloorColumn]);
+                if (foundUnitColumn) unit = String(row[foundUnitColumn]);
+
+
+                if (sf && !isNaN(sf) && sf > 0) {
+
+                    units.push({
+
+                        sf: sf,
+
+                        bed: bed || 0,
+
+                        floor: floor || 1,
+
+                        unit: unit || `Unit_${index + 1}`,
+
+                        amiLevel: 40
+                    });
+                }
+            });
+
+            return units.length > 0 ? units : null;
+
+        }
+
+
+
+        function getAMIColor(amiLevel) {
+
+            if (amiLevel <= 40) return '#e74c3c'; // Red
+
+            if (amiLevel <= 50) return '#f39c12'; // Orange
+
+            if (amiLevel <= 60) return '#f1c40f'; // Yellow
+
+            if (amiLevel <= 70) return '#2ecc71'; // Light Green
+
+            return '#27ae60'; // Green
+
+        }
+
+
+
+    </script>
+
+</body>
+
+</html>
+
+
+                if (foundSfColumn) sf = parseFloat(row[foundSfColumn]);
+                if (foundBedColumn) bed = parseInt(row[foundBedColumn]);
+                if (foundFloorColumn) floor = parseInt(row[foundFloorColumn]);
+                if (foundUnitColumn) unit = String(row[foundUnitColumn]);
+
+
+                if (sf && !isNaN(sf) && sf > 0) {
+
+                    units.push({
+
+                        sf: sf,
+
+                        bed: bed || 0,
+
+                        floor: floor || 1,
+
+                        unit: unit || `Unit_${index + 1}`,
+
+                        amiLevel: 40
+                    });
+                }
+            });
+
+            return units.length > 0 ? units : null;
+
+        }
+
+
+
+        function getAMIColor(amiLevel) {
+
+            if (amiLevel <= 40) return '#e74c3c'; // Red
+
+            if (amiLevel <= 50) return '#f39c12'; // Orange
+
+            if (amiLevel <= 60) return '#f1c40f'; // Yellow
+
+            if (amiLevel <= 70) return '#2ecc71'; // Light Green
+
+            return '#27ae60'; // Green
+
+        }
+
+
+
+    </script>
+
+</body>
+
 </html>

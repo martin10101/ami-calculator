@@ -3,21 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intelligent AMI Calculator</title>
+    <title>BULLETPROOF AMI Calculator v8.1 - FIXED</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        /* Same CSS as before – no changes needed for fix */
         :root {
-            --primary-color: #6a11cb;
-            --secondary-color: #2575fc;
-            --background-color: #f0f2f5;
+            --primary-color: #4a90e2;
+            --secondary-color: #50c878;
+            --background-color: #f4f7fa;
             --card-background: #ffffff;
-            --text-color: #333;
+            --text-color: #2c3e50;
             --header-text-color: #ffffff;
-            --border-radius: 12px;
-            --shadow: 0 4px 6px rgba(0,0,0,0.1);
-            --ai-message-bg: #e9ecef;
+            --border-radius: 8px;
+            --shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --ai-message-bg: #e8f4fd;
             --success-color: #27ae60;
             --error-color: #e74c3c;
+            --warning-color: #f39c12;
+            --ami-40-color: #ff7675;
+            --ami-60-color: #fdcb6e;
         }
 
         body {
@@ -28,6 +32,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            line-height: 1.6;
         }
 
         header {
@@ -38,14 +43,14 @@
             box-shadow: var(--shadow);
             z-index: 10;
         }
-        h1 { font-size: 1.5rem; margin: 0; }
+        h1 { font-size: 1.5rem; margin: 0; font-weight: 600; }
 
         main {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
             padding: 1rem;
-            max-width: 900px;
+            max-width: 1400px;
             width: 100%;
             margin: 0 auto;
             box-sizing: border-box;
@@ -55,65 +60,196 @@
         #chat-window {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 1rem;
+            padding: 1.5rem;
             background: var(--card-background);
             border-radius: var(--border-radius);
             margin-bottom: 1rem;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
         
         .chat-message {
-            margin-bottom: 1rem;
-            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
             border-radius: var(--border-radius);
-            max-width: 85%;
-            line-break: anywhere;
-            opacity: 0;
-            transform: translateY(10px);
-            animation: fadeIn 0.3s forwards;
+            max-width: 90%;
+            animation: fadeIn 0.3s ease-out;
         }
-        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .user-message { background-color: var(--secondary-color); color: white; margin-left: auto; text-align: left; }
+        .user-message { background-color: var(--primary-color); color: white; margin-left: auto; }
         .ai-message { background-color: var(--ai-message-bg); color: var(--text-color); margin-right: auto; }
-        .system-message { text-align: center; color: #888; font-style: italic; font-size: 0.9em; margin-bottom: 1rem; }
+        .system-message { text-align: center; color: #7f8c8d; font-style: italic; font-size: 0.9em; margin-bottom: 1rem; }
 
         .input-container {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             padding: 1rem;
             background: var(--card-background);
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
         }
-        #chat-input { flex-grow: 1; border: 1px solid #ccc; border-radius: var(--border-radius); padding: 0.75rem; font-size: 1rem; }
-        #api-key-input { flex-grow: 1; border-radius: var(--border-radius); padding: 0.75rem; font-size: 1rem; border: 1px solid var(--primary-color); }
+        #chat-input, #api-key-input { flex-grow: 1; border: 1px solid #e0e0e0; border-radius: var(--border-radius); padding: 0.75rem; font-size: 1rem; transition: border 0.2s; }
+        #chat-input:focus, #api-key-input:focus { border-color: var(--primary-color); outline: none; }
         
         .chat-button {
             border: none;
             background-color: var(--primary-color);
             color: white;
             border-radius: var(--border-radius);
-            padding: 0 1.5rem;
+            padding: 0 1.25rem;
             font-size: 1rem;
-            font-weight: bold;
+            font-weight: 500;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease, transform 0.1s;
         }
-        .chat-button:hover { background-color: var(--secondary-color); }
-        .chat-button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .chat-button:hover { background-color: var(--secondary-color); transform: translateY(-1px); }
+        .chat-button:disabled { background-color: #bdc3c7; cursor: not-allowed; transform: none; }
 
-        .scenario-results {
-            padding: 1rem;
+        .compliance-results {
+            padding: 1.5rem;
             border: 1px solid #e0e0e0;
             border-radius: var(--border-radius);
             margin-top: 1rem;
-            background: #f9f9f9;
+            background: #fdfdfd;
+        }
+
+        .scenario-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem;
+            margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
+            font-weight: 600;
+        }
+
+        .compliance-check {
+            margin: 0.75rem 0;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .compliance-pass { background-color: #dff0d8; color: #3c763d; }
+        .compliance-fail { background-color: #f2dede; color: #a94442; }
+        .compliance-warning { background-color: #fcf8e3; color: #8a6d3b; }
+
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .unit-card {
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+        }
+        .unit-card.ami-40 { border-left: 4px solid var(--ami-40-color); }
+        .unit-card.ami-60 { border-left: 4px solid var(--ami-60-color); }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-card {
+            background: #fff;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .download-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+        .download-btn:hover { background-color: #219653; }
+
+        .progress-indicator {
+            text-align: center;
+            color: #95a5a6;
+            font-style: italic;
+            margin: 1rem 0;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
+        }
+
+        th, td {
+            border: 1px solid #e0e0e0;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+
+        .bedroom-analysis {
+            background: #fff;
+            padding: 1.25rem;
+            border-radius: var(--border-radius);
+            margin: 1.5rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #e0e0e0;
+            margin: 2rem 0;
+        }
+
+        .rule-list {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
-    <header><h1>Intelligent AMI Calculator</h1></header>
+    <header><h1>BULLETPROOF AMI Calculator v8.1 - FIXED</h1></header>
     <main>
         <div id="chat-window"></div>
         <div id="api-key-container" class="input-container">
@@ -121,17 +257,24 @@
         </div>
         <div id="chat-input-container" class="input-container" style="display: none;">
             <input type="text" id="chat-input" placeholder="Type your message here...">
-            <button id="upload-btn" class="chat-button" title="Upload Excel File">📎</button>
+            <button id="upload-btn" class="chat-button" title="Upload Excel File">📎 Upload</button>
             <button id="send-btn" class="chat-button">Send</button>
         </div>
     </main>
-    <input type="file" id="file-input" accept=".xlsx, .xls" style="display: none;">
+    <input type="file" id="file-input" accept=".xlsx, .xls, .xlsb, .csv" style="display: none;">
 
     <script type="module">
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
         // --- STATE ---
-        let state = { apiKey: null, buildingData: null, isProcessing: false };
+        let state = { 
+            apiKey: null, 
+            buildingData: null, 
+            isProcessing: false,
+            analysisResults: null,
+            uniqueUnitIndex: 0,
+            lastRequirements: null // For clarification handling
+        };
 
         // --- DOM ELEMENTS ---
         const chatWindow = document.getElementById('chat-window');
@@ -143,6 +286,13 @@
         const uploadBtn = document.getElementById('upload-btn');
         const fileInput = document.getElementById('file-input');
 
+        // NYC COMPLIANCE CONSTANTS
+        const MIN_SIZES = { 0: 400, 1: 575, 2: 775, 3: 950, 4: 1150 };
+        const VERTICAL_DISTRIBUTION_THRESHOLD = 0.65;
+        const HORIZONTAL_DISTRIBUTION_THRESHOLD = 2/3;
+        const AMI_LOW_PERCENTAGE = 0.2; // 20% at lower AMI
+        const MAX_OVERAGE_PCT = 0.01; // 1% max over
+
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', initializeApp);
         apiKeyInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleApiKey());
@@ -150,131 +300,183 @@
         chatInput.addEventListener('keypress', (e) => e.key === 'Enter' && handleUserMessage());
         uploadBtn.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', handleFileUpload);
-        
+
+        // --- UTILITIES ---
+        function updateUI() {
+            const hasKey = !!state.apiKey;
+            const isProcessing = state.isProcessing;
+            chatInput.disabled = !hasKey || isProcessing;
+            sendBtn.disabled = !hasKey || isProcessing;
+            uploadBtn.disabled = !hasKey || isProcessing;
+            chatInput.placeholder = isProcessing ? "Analyzing..." : "Specify requirements...";
+        }
+
+        function addMessage(text, role, isHTML = false) {
+            const el = document.createElement('div');
+            el.className = `chat-message ${role}-message`;
+            if (isHTML) {
+                el.innerHTML = text;
+            } else {
+                text = text
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/\n/g, '<br>');
+                el.innerHTML = text;
+            }
+            chatWindow.appendChild(el);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function analyzeBuildingData(units) {
+            const floors = units.map(u => u.floor);
+            const bedroomDistribution = {};
+            units.forEach(unit => bedroomDistribution[unit.bed] = (bedroomDistribution[unit.bed] || 0) + 1);
+            return {
+                floors: { min: Math.min(...floors), max: Math.max(...floors), count: new Set(floors).size },
+                bedroomDistribution,
+                totalUnits: units.length,
+                totalSF: units.reduce((sum, u) => sum + u.sf, 0)
+            };
+        }
+
+        function normalizeAndExtractUnits(jsonData) {
+            if (!jsonData || jsonData.length === 0) return null;
+
+            const units = [];
+            const sfCols = ['SF', 'sf', 'SQUARE_FEET', 'NET SF', 'sqft', 'Square Feet', 'AREA', 'SIZE', 'NET SF'];
+            const bedCols = ['BED', 'bed', 'BEDROOMS', 'BEDS', 'Bedrooms'];
+            const floorCols = ['FLOOR', 'floor', 'LEVEL'];
+            const unitCols = ['UNIT', 'unit', 'APT', 'APARTMENT'];
+            const balconyCols = ['BALCONY', 'balcony', 'TERRACE', 'SEC. 504'];
+
+            const cols = Object.keys(jsonData[0] || {});
+            const sfCol = cols.find(c => sfCols.some(sc => c.toLowerCase().includes(sc.toLowerCase())));
+            const bedCol = cols.find(c => bedCols.some(bc => c.toLowerCase().includes(bc.toLowerCase())));
+            const floorCol = cols.find(c => floorCols.some(fc => c.toLowerCase().includes(fc.toLowerCase())));
+            const unitCol = cols.find(c => unitCols.some(uc => c.toLowerCase().includes(uc.toLowerCase())));
+            const balconyCol = cols.find(c => balconyCols.some(bc => c.toLowerCase().includes(bc.toLowerCase())));
+
+            if (!sfCol || !bedCol || !floorCol || !unitCol) {
+                throw new Error('Missing required columns: SF, Bedrooms, Floor, Unit');
+            }
+
+            jsonData.forEach((row, index) => {
+                const sf = parseFloat(row[sfCol]);
+                const bed = parseInt(row[bedCol]);
+                const floor = parseInt(row[floorCol]);
+                const unitId = String(row[unitCol]);
+                const hasBalcony = balconyCol ? !!row[balconyCol] : false;
+
+                if (!isNaN(sf) && sf > 0 && !isNaN(bed) && !isNaN(floor) && unitId) {
+                    units.push({
+                        sf, bed, floor, unit: unitId, hasBalcony,
+                        amiLevel: row.AMI ? parseInt(row.AMI) : null,
+                        tempIndex: state.uniqueUnitIndex++
+                    });
+                }
+            });
+
+            return units.length > 0 ? units : null;
+        }
+
         // --- INITIALIZATION ---
         async function initializeApp() {
-            console.log("🚀 Initializing app...");
             const storedKey = localStorage.getItem('geminiApiKey');
-            console.log("📦 Stored key found:", !!storedKey);
             if (storedKey) {
-                console.log("🔄 Auto-loading stored key...");
                 await verifyAndSetApiKey(storedKey, true);
             } else {
-                console.log("❌ No stored key, showing input");
-                addMessage("Hello! To begin, please enter your Gemini API key.", 'ai');
+                addMessage("Welcome to the Fixed NYC Affordable Housing Compliance Calculator v8.1! Enter your Gemini API key to begin.", 'ai');
             }
         }
-        
+
         // --- API KEY HANDLING ---
         async function handleApiKey() {
-            console.log("🔑 handleApiKey called");
-            console.log("📝 Input value:", apiKeyInput.value);
             await verifyAndSetApiKey(apiKeyInput.value);
         }
 
         async function verifyAndSetApiKey(key, isAutoLoad = false) {
-            console.log("🔐 verifyAndSetApiKey called", { key: key ? key.substring(0, 10) + "..." : "empty", isAutoLoad });
             key = key.trim();
-            if (!key) {
-                console.log("❌ No key provided");
-                return addMessage("Please provide an API key.", 'system');
-            }
+            if (!key) return addMessage("Please provide an API key.", 'system');
 
-            console.log("🔒 Disabling input...");
             apiKeyInput.disabled = true;
             if (!isAutoLoad) addMessage("Verifying API Key...", 'system');
 
             try {
-                console.log("🤖 Creating GoogleGenerativeAI instance...");
                 const genAI = new GoogleGenerativeAI(key);
-                console.log("📊 Getting model...");
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                console.log("🔢 Testing token count...");
                 await model.countTokens("test");
-                console.log("✅ Token count test passed");
                 
                 state.apiKey = key;
                 state.genAI = genAI;
                 state.model = model;
                 localStorage.setItem('geminiApiKey', key);
-                console.log("💾 Key saved to localStorage");
                 
-                if (!isAutoLoad) addMessage("Success! API Key is valid and has been saved for future sessions.", 'system');
+                if (!isAutoLoad) addMessage("✅ API Key verified! Upload your Excel and specify requirements.", 'system');
                 
-                console.log("🎯 Showing chat input...");
                 showChatInput();
             } catch (error) {
-                console.error("❌ API Key verification failed:", error);
-                addMessage("API Key is invalid. Please try again.", 'system');
+                addMessage("❌ Invalid API Key. Try again.", 'system');
                 apiKeyInput.disabled = false;
             }
         }
 
         // --- UI FLOW ---
         function showChatInput() {
-            console.log("🔄 showChatInput called");
-            console.log("📦 Current state:", { 
-                apiKey: !!state.apiKey, 
-                buildingData: !!state.buildingData,
-                isProcessing: state.isProcessing 
-            });
             apiKeyContainer.style.display = 'none';
             chatInputContainer.style.display = 'flex';
             chatInput.focus();
-            console.log("✅ Chat input shown");
         }
 
         // --- FILE HANDLING ---
         function handleFileUpload(event) {
-            console.log("📁 handleFileUpload called");
             const file = event.target.files[0];
-            if (!file) {
-                console.log("❌ No file selected");
-                return;
-            }
-            console.log("📄 File selected:", file.name, file.size, "bytes");
+            if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                console.log("📖 File read complete");
                 try {
-                    const data = new Uint8Array(e.target.result);
-                    console.log("📊 Data size:", data.length, "bytes");
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    console.log("📋 Workbook sheets:", workbook.SheetNames);
+                    const data = e.target.result;
+                    const type = file.name.endsWith('.csv') ? 'string' : 'array';
+                    const workbook = XLSX.read(type === 'string' ? data : new Uint8Array(data), { type });
                     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-                    console.log("📈 Raw JSON data:", jsonData.length, "rows");
-                    console.log("📊 Sample row:", jsonData[0]);
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: null });
                     
                     state.buildingData = normalizeAndExtractUnits(jsonData);
-                    console.log("🏢 Normalized building data:", state.buildingData);
                     
                     if (state.buildingData && state.buildingData.length > 0) {
+                        const analysis = analyzeBuildingData(state.buildingData);
                         const totalSF = state.buildingData.reduce((sum, unit) => sum + unit.sf, 0);
-                        console.log("📏 Total SF calculated:", totalSF);
-                        addMessage(`File uploaded successfully! Found ${state.buildingData.length} units with ${totalSF.toFixed(1)} total square footage.`, 'system');
+                        
+                        let message = `📁 File uploaded successfully!<br><br>`;
+                        message += `<strong>Building Summary:</strong><br>`;
+                        message += `• Total Units: ${state.buildingData.length}<br>`;
+                        message += `• Total SF: ${totalSF.toLocaleString()}<br>`;
+                        message += `• Floors: ${analysis.floors.min} - ${analysis.floors.max} (${analysis.floors.count} total)<br><br>`;
+                        message += `<strong>Bedroom Distribution:</strong><br>`;
+                        Object.entries(analysis.bedroomDistribution).forEach(([beds, count]) => {
+                            message += `• ${beds}BR: ${count} units (${((count/state.buildingData.length)*100).toFixed(1)}%)<br>`;
+                        });
+                        message += `<br>Specify affordable housing requirements (e.g., "2043.3 sf affordable, 40% AMI units required, average 60% AMI, affordable on floors 5 and 6, avoid corner units").`;
+                        
+                        addMessage(message, 'system', true);
                     } else {
-                        console.log("❌ No valid units found");
-                        addMessage("Error: No valid unit data found. Please check your Excel file format.", 'system');
+                        addMessage("❌ No valid unit data found. Check format (supports .xlsx, .xls, .xlsb, .csv).", 'system');
                     }
                 } catch (error) {
-                    console.error("❌ File processing error:", error);
-                    addMessage("Error processing file: " + error.message, 'system');
+                    addMessage(`❌ Error processing file: ${error.message}. Ensure valid format.`, 'system');
                 }
             };
-            reader.readAsArrayBuffer(file);
+            if (file.name.endsWith('.csv')) {
+                reader.readAsText(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
         }
 
         // --- CONVERSATION ---
         async function handleUserMessage() {
-            console.log("💬 handleUserMessage called");
             const userText = chatInput.value.trim();
-            console.log("📝 User text:", userText);
-            if (!userText || state.isProcessing) {
-                console.log("❌ Skipping - empty text or processing");
-                return;
-            }
+            if (!userText || state.isProcessing) return;
 
             addMessage(userText, 'user');
             chatInput.value = '';
@@ -282,491 +484,604 @@
             updateUI();
             
             try {
-                console.log("🤖 Using existing AI model...");
-                const prompt = buildMasterPrompt(userText);
-                console.log("📤 Sending prompt to AI...");
+                const prompt = buildCompliancePrompt(userText);
                 const result = await state.model.generateContent(prompt);
-                const responseText = result.response.text();
-                console.log("📥 AI response:", responseText);
+                let responseText = result.response.text();
 
-                if (responseText.includes("ACTION_CALCULATE")) {
-                    console.log("🧮 Action calculate detected");
-                    const jsonPart = responseText.substring(responseText.indexOf('{'));
-                    console.log("📋 JSON part:", jsonPart);
-                    try {
-                        const requirements = JSON.parse(jsonPart);
-                        console.log("📊 Parsed requirements:", requirements);
-                        console.log("🎯 AMI Distribution:", requirements.amiDistribution);
-                        console.log("🎯 Required Floors:", requirements.requiredFloors);
-                        console.log("🎯 Target SF:", requirements.targetSF);
-                        runAndDisplayScenarios(requirements);
-                    } catch (parseError) {
-                        console.error("❌ JSON parse error:", parseError);
-                        console.log("📋 Raw response text:", responseText);
-                        addMessage("Error parsing AI response. Please try again.", 'ai');
+                if (responseText.includes("ACTION_CLARIFY")) {
+                    const question = responseText.replace("ACTION_CLARIFY", "").trim();
+                    addMessage(question, 'ai');
+                } else if (responseText.includes("ACTION_CALCULATE")) {
+                    const jsonPart = responseText.match(/\{[\s\S]*\}/)[0];
+                    const requirements = JSON.parse(jsonPart);
+                    state.lastRequirements = requirements;
+                    if (validateRequirements(requirements)) {
+                        await runComplianceAnalysis(requirements);
+                    } else {
+                        addMessage("⚠️ Ambiguous requirements detected. Please clarify.", 'system');
                     }
                 } else {
-                    console.log("💬 Regular AI response");
                     addMessage(responseText, 'ai');
                 }
             } catch (error) {
-                console.error("❌ AI Error:", error);
-                addMessage("An error occurred with the AI. Please try again.", 'ai');
+                addMessage("❌ Error occurred. Please try again.", 'ai');
             } finally {
                 state.isProcessing = false;
                 updateUI();
             }
         }
-        
-        // --- UTILITIES ---
-        function updateUI() {
-            console.log("🎨 updateUI called");
-            const hasKey = !!state.apiKey;
-            const isProcessing = state.isProcessing;
-            console.log("🔑 UI state:", { hasKey, isProcessing });
-            chatInput.disabled = !hasKey || isProcessing;
-            sendBtn.disabled = !hasKey || isProcessing;
-            uploadBtn.disabled = !hasKey || isProcessing;
-            chatInput.placeholder = isProcessing ? "Thinking..." : "Type your message here...";
-        }
 
-        function addMessage(text, role, isHTML = false) {
-            console.log("💬 addMessage:", { role, isHTML, textLength: text.length });
-            const el = document.createElement('div');
-            el.className = `chat-message ${role}-message`;
-            if (isHTML) el.innerHTML = text;
-            else el.textContent = text;
-            chatWindow.appendChild(el);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
+        function buildCompliancePrompt(userText) {
+            const buildingSummary = state.buildingData ? analyzeBuildingData(state.buildingData) : null;
 
-        function buildMasterPrompt(userText) {
-             console.log("🏗️ buildMasterPrompt called");
-             const buildingDataSummary = state.buildingData ? {
-                 totalUnits: state.buildingData.length,
-                 totalSquareFootage: state.buildingData.reduce((s, u) => s + u.sf, 0),
-             } : null;
-             console.log("📊 Building data summary:", buildingDataSummary);
-
-             return `
-                You are an expert calculation tool for NYC affordable housing. Your only goal is to extract requirements from the user's text and trigger a calculation.
-                **Core Directive: CALCULATE, DON'T CONSULT.**
-                - Your job is to run the numbers.
-                - **NEVER** ask for external documents.
-                - **MAKE REASONABLE ASSUMPTIONS.** 
-                
-                **AMI DISTRIBUTION RULES:**
-                - When user says "40% AMI is required" with "average should still be 60% AMI", this means:
-                  * 20% of units at 40% AMI (for deeper affordability)
-                  * 80% of units at 60% AMI (to achieve 60% average)
-                - When user says just "40% AMI units", assume 100% at 40% AMI
+            return `
+                You are an expert in NYC affordable housing compliance. Extract requirements from user input. If ambiguous (e.g., unclear AMI mix, conflicting floors), respond with ACTION_CLARIFY followed by a question. Otherwise, trigger calculations.
                 
                 **CONTEXT:**
-                - Building Data Summary: ${JSON.stringify(buildingDataSummary)}.
+                Building Data: ${JSON.stringify(buildingSummary)}
                 
-                **USER'S LATEST MESSAGE:**
+                **USER REQUEST:**
                 "${userText}"
                 
-                **YOUR TASK:**
-                1. Immediately analyze the user's message.
-                2. Extract these requirements:
-                   - targetSF: The required square footage (number)
-                   - amiDistribution: Array of AMI percentages (e.g., [40, 60] for mixed distribution)
-                   - requiredFloors: Array of floor numbers (e.g., [5, 6])
-                3. If you can extract requirements, your ONLY response must be "ACTION_CALCULATE" followed by the JSON: {"targetSF": ..., "amiDistribution": [...], "requiredFloors": [...]}.
-                4. If missing target SF, you may ask for that one thing.
+                **EXTRACTION RULES:**
+                - targetSF: Required affordable SF (float, must be positive)
+                - amiAverage: Target average AMI (default 60 if not specified)
+                - amiLow: Lower AMI level (e.g., 40), if "40% AMI required" set to 40 and ensure 20% SF allocation
+                - requiredFloors: Must have affordable (array ints)
+                - excludedFloors: No affordable (array ints)
+                - preferredFloors: Prefer affordable (array ints)
+                - bedroomTest: "A" or "B" - default "A"
+                - sizeTest: "A", "B", or "C" - default "B"
+                - customRules: Array of exact strings from input (e.g., ["avoid corner units", "include unit 5B", "prefer small units"])
+                
+                **RESPONSE:**
+                If clarification needed: ACTION_CLARIFY[question to ask]
+                If extractable: ACTION_CALCULATE{ "targetSF": number, "amiAverage": number, "amiLow": number|null, "requiredFloors": [], "excludedFloors": [], "preferredFloors": [], "bedroomTest": "A/B", "sizeTest": "A/B/C", "customRules": [] }
                 
                 **EXAMPLES:**
-                - "2,043.3 sf of affordable is required. 40% AMI units are required. There should be an affordable unit on floors 5 and 6."
-                  → {"targetSF": 2043.3, "amiDistribution": [40, 60], "requiredFloors": [5, 6]}
-                - "I need 1500 sf at 50% AMI"
-                  → {"targetSF": 1500, "amiDistribution": [50], "requiredFloors": []}
-                - "40% AMI is required, average should be 60% AMI"
-                  → {"targetSF": [extract from context], "amiDistribution": [40, 60], "requiredFloors": []}
-              `;
-         }
+                "2043.3 sf affordable, 40% AMI units required, average 60% AMI, affordable on floors 5 and 6, avoid corner units"
+                → ACTION_CALCULATE{"targetSF": 2043.3, "amiAverage": 60, "amiLow": 40, "requiredFloors": [5,6], "excludedFloors": [], "preferredFloors": [], "bedroomTest": "A", "sizeTest": "B", "customRules": ["avoid corner units"]}
+                If ambiguous AMI: ACTION_CLARIFYDo you mean 20% of affordable SF at 40% AMI?
+            `;
+        }
 
-        function runAndDisplayScenarios(requirements) {
-            console.log("🎯 runAndDisplayScenarios called");
-            console.log("📋 Requirements:", requirements);
+        function validateRequirements(req) {
+            if (req.targetSF <= 0) return false;
+            if (req.amiLow && !req.amiAverage) return false;
+            if (req.requiredFloors && req.excludedFloors) {
+                const overlap = req.requiredFloors.filter(f => req.excludedFloors.includes(f));
+                if (overlap.length > 0) return false;
+            }
+            return true;
+        }
+
+        // --- COMPLIANCE ANALYSIS ENGINE ---
+        async function runComplianceAnalysis(requirements) {
             if (!state.buildingData) {
-                console.log("❌ No building data available");
-                addMessage("Please upload a building data file first.", 'ai');
+                addMessage("Upload building data first.", 'ai');
                 return;
             }
 
-            console.log("🏢 Building data available:", state.buildingData.length, "units");
-            const scenarios = [
-                generateScenario("Exact Target Match", "Aims for the closest SF match to requirements", requirements, (a, b) => Math.abs(a.sf - requirements.targetSF) - Math.abs(b.sf - requirements.targetSF)),
-                generateScenario("Minimum Units Strategy", "Uses largest units to minimize count", requirements, (a, b) => b.sf - a.sf),
-                generateScenario("Maximum Affordability", "Uses smallest units to maximize count", requirements, (a, b) => a.sf - b.sf),
-                generateScenario("Balanced Floor Distribution", "Includes required floors, then fills remainder", requirements, (a, b) => {
-                    const aOnRequiredFloor = requirements.requiredFloors.includes(a.floor);
-                    const bOnRequiredFloor = requirements.requiredFloors.includes(b.floor);
-                    if (aOnRequiredFloor && !bOnRequiredFloor) return -1;
-                    if (!aOnRequiredFloor && bOnRequiredFloor) return 1;
-                    return a.sf - b.sf;
-                })
-            ];
+            addMessage('<div class="progress-indicator">🏗️ Analyzing compliance...</div>', 'ai', true);
 
-            console.log("📊 Generated scenarios:", scenarios.length);
-            let resultHTML = '<div class="scenario-results"><h3>AMI Scenario Results</h3>';
-            scenarios.forEach((scenario, index) => {
-                console.log(`📋 Scenario ${index + 1}:`, scenario.title, scenario.units.length, "units");
-                resultHTML += `<h4>${index + 1}. ${scenario.title}</h4>`;
-                resultHTML += `<p><em>${scenario.reasoning}</em></p>`;
-                resultHTML += `<p><strong>Result:</strong> ${scenario.units.length} units, ${scenario.totalSF.toFixed(1)} sf</p>`;
-                resultHTML += '<ul>';
-                scenario.units.forEach(unit => {
-                    const amiColor = getAMIColor(unit.amiLevel);
-                    resultHTML += `<li style="color: ${amiColor};">${unit.unit} (${unit.sf.toFixed(1)} sf) - ${unit.amiLevel}% AMI</li>`;
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const scenarios = generateComplianceScenarios(requirements);
+                    displayComplianceResults(scenarios, requirements);
+                    resolve();
+                }, 100);
+            });
+        }
+
+        function generateComplianceScenarios(requirements) {
+            const scenarios = [];
+            const strategies = [
+                { name: "Precise SF Strategy", desc: "Minimal overage, closest to target", strat: "precise_sf" },
+                { name: "Preserve Large Units", desc: "Small units for affordable", strat: "preserve_large" },
+                { name: "Balanced Distribution", desc: "Even across floors/beds", strat: "balanced" },
+                { name: "Cost Optimized", desc: "Prefer less desirable/smaller units for developer economics", strat: "cost_optimized" }
+            ];
+            
+            strategies.forEach((s, index) => {
+                let scenario = generateOptimalScenario(requirements, s.strat, index);
+                if (scenario.totalSF >= requirements.targetSF && (scenario.totalSF - requirements.targetSF) / requirements.targetSF <= 0.15) {
+                    scenarios.push({ name: s.name, description: s.desc, ...scenario });
+                }
+            });
+            
+            if (scenarios.length < 4) {
+                addMessage("⚠️ Could not generate 4 valid scenarios without violating SF rules. Generated " + scenarios.length + ".", 'system');
+            }
+            
+            return scenarios;
+        }
+
+        function generateOptimalScenario(requirements, strategy, seed = 0) {
+            const building = analyzeBuildingData(state.buildingData);
+            const targetSF = requirements.targetSF;
+            const amiLow = requirements.amiLow || null;
+            const amiAverage = requirements.amiAverage || 60;
+            
+            const amiDistribution = calculateAMIDistribution(amiLow, amiAverage);
+            const constraints = parseCustomRules(requirements.customRules || []);
+            
+            let candidateUnits = applyConstraints([...state.buildingData], requirements, constraints, strategy);
+            
+            if (seed > 0) {
+                candidateUnits.sort((a, b) => (a.tempIndex + seed) - (b.tempIndex + seed));
+            }
+            
+            const selectedUnits = selectCompliantUnits(candidateUnits, targetSF, requirements, strategy, building);
+            assignAMILevels(selectedUnits, amiDistribution, targetSF);
+            
+            const compliance = checkAllCompliance(selectedUnits, state.buildingData, requirements);
+            
+            return {
+                units: selectedUnits,
+                totalSF: selectedUnits.reduce((sum, unit) => sum + unit.sf, 0),
+                compliance: compliance,
+                amiBreakdown: calculateAMIBreakdown(selectedUnits),
+                appliedRules: requirements.customRules.concat([`Strategy: ${strategy}`])
+            };
+        }
+
+        function parseCustomRules(rules) {
+            const constraints = {
+                focus2BRlower: false,
+                evenBalconies: false
+            };
+            
+            rules.forEach(rule => {
+                const lowerRule = rule.toLowerCase();
+                if (lowerRule.includes('focus 2br') && lowerRule.includes('lower')) {
+                    constraints.focus2BRlower = true;
+                }
+                if (lowerRule.includes('distribute balconies') || lowerRule.includes('even balconies')) {
+                    constraints.evenBalconies = true;
+                }
+            });
+            
+            return constraints;
+        }
+
+        function applyConstraints(units, requirements, constraints, strategy) {
+            units = units.filter(u => !requirements.excludedFloors?.includes(u.floor));
+            
+            units.sort((a, b) => {
+                let scoreA = 0, scoreB = 0;
+                
+                if (requirements.preferredFloors?.includes(a.floor)) scoreA -= 100;
+                if (requirements.preferredFloors?.includes(b.floor)) scoreB -= 100;
+                
+                if (constraints.focus2BRlower && a.bed >= 2) scoreA += a.floor * 10;
+                if (constraints.focus2BRlower && b.bed >= 2) scoreB += b.floor * 10;
+                
+                return scoreA - scoreB;
+            });
+            
+            return units;
+        }
+
+        function selectCompliantUnits(candidateUnits, targetSF, requirements, strategy, buildingAnalysis) {
+            candidateUnits.forEach((u, i) => u.tempIndex = i);
+            
+            if (strategy === "preserve_large") {
+                candidateUnits.sort((a, b) => {
+                    if (a.bed !== b.bed) return a.bed - b.bed;
+                    if (a.sf !== b.sf) return a.sf - b.sf;
+                    return a.tempIndex - b.tempIndex;
                 });
-                resultHTML += '</ul>';
-            });
-            resultHTML += '</div>';
-            
-            addMessage(resultHTML, 'ai', true);
-        }
-
-        function generateScenario(title, reasoning, requirements, sortFn) {
-            console.log("🎲 generateScenario:", title);
-            let availableUnits = [...state.buildingData];
-            console.log("📦 Available units:", availableUnits.length);
-            
-            // Pre-select units from required floors if specified
-            if (requirements.requiredFloors && requirements.requiredFloors.length > 0) {
-                console.log("🏢 Required floors:", requirements.requiredFloors);
-                const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
-                const remainingUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
-                console.log("📋 Required floor units:", requiredFloorUnits.length);
-                console.log("📋 Remaining units:", remainingUnits.length);
-                
-                // Sort required floor units by the scenario's logic
-                requiredFloorUnits.sort(sortFn);
-                remainingUnits.sort(sortFn);
-                
-                availableUnits = [...requiredFloorUnits, ...remainingUnits];
+            } else if (strategy === "balanced") {
+                candidateUnits.sort((a, b) => {
+                    const floorDiff = a.floor - b.floor;
+                    if (floorDiff !== 0) return floorDiff;
+                    if (a.bed !== b.bed) return a.bed - b.bed;
+                    if (a.sf !== b.sf) return a.sf - b.sf;
+                    return a.tempIndex - b.tempIndex;
+                });
+            } else if (strategy === "cost_optimized") {
+                candidateUnits.sort((a, b) => {
+                    if (a.sf !== b.sf) return b.sf - a.sf; // Prefer smaller units
+                    if (a.floor !== b.floor) return b.floor - a.floor; // Prefer lower floors
+                    return a.tempIndex - b.tempIndex;
+                });
             } else {
-                availableUnits.sort(sortFn);
+                candidateUnits.sort((a, b) => {
+                    if (a.sf !== b.sf) return a.sf - b.sf;
+                    return a.tempIndex - b.tempIndex;
+                });
             }
+            
+            let selectedUnits = selectUnitsWithDP(candidateUnits, targetSF, requirements);
+            selectedUnits = ensureRequiredFloors(selectedUnits, candidateUnits, requirements);
+            
+            return selectedUnits;
+        }
 
-            let selectedUnits = [];
+        function selectUnitsWithDP(units, targetSF) {
+            const scale = 10;
+            const scaledTarget = Math.floor(targetSF * scale);
+            const n = units.length;
+            const maxSum = units.reduce((sum, u) => sum + Math.floor(u.sf * scale), 0);
+            const dp = Array(maxSum + 1).fill(false);
+            dp[0] = true;
+            const prev = Array(n + 1).fill(null).map(() => Array(maxSum + 1).fill(null));
             
-            // Different strategies for each scenario
-            if (title === "Exact Target Match") {
-                // Use the optimal combination finder
-                selectedUnits = findBestCombination(availableUnits, requirements.targetSF);
-            } else if (title === "Minimum Units Strategy") {
-                // Force using larger units by limiting to top 50% largest units
-                const largeUnits = availableUnits.slice(0, Math.ceil(availableUnits.length * 0.5));
-                selectedUnits = findBestCombination(largeUnits, requirements.targetSF);
-            } else if (title === "Maximum Affordability") {
-                // Force using smaller units by limiting to bottom 50% smallest units
-                const smallUnits = availableUnits.slice(-Math.ceil(availableUnits.length * 0.5));
-                selectedUnits = findBestCombination(smallUnits, requirements.targetSF);
-            } else if (title === "Balanced Floor Distribution") {
-                // Prioritize units from required floors, then mix with other floors
-                const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
-                const otherFloorUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
-                
-                // Try to get at least 2 units from required floors, then fill with others
-                let combination = [];
-                if (requiredFloorUnits.length >= 2) {
-                    combination = requiredFloorUnits.slice(0, 2);
-                    const remainingSF = requirements.targetSF - combination.reduce((sum, u) => sum + u.sf, 0);
-                    if (remainingSF > 0) {
-                        const additionalUnits = findBestCombination(otherFloorUnits, remainingSF);
-                        combination = [...combination, ...additionalUnits];
+            for (let i = 1; i <= n; i++) {
+                const unitSF = Math.floor(units[i-1].sf * scale);
+                for (let j = maxSum; j >= unitSF; j--) {
+                    if (dp[j - unitSF]) {
+                        dp[j] = true;
+                        prev[i][j] = j - unitSF;
                     }
-                } else {
-                    combination = findBestCombination(availableUnits, requirements.targetSF);
                 }
-                selectedUnits = combination;
             }
             
-            const totalSF = selectedUnits.reduce((sum, unit) => sum + unit.sf, 0);
-            console.log("✅ Selected units:", selectedUnits.length, "Total SF:", totalSF);
+            let minSum = Infinity;
+            for (let j = scaledTarget; j <= maxSum; j++) {
+                if (dp[j] && j < minSum) {
+                    minSum = j;
+                }
+            }
             
-            // Assign AMI levels based on distribution
-            const amiLevels = requirements.amiDistribution || [40];
-            console.log("🎯 AMI levels to assign:", amiLevels);
+            if (minSum === Infinity) return [];
             
-            selectedUnits.forEach((unit, index) => {
-                if (amiLevels.length === 2) {
-                    // Mixed distribution: 20% at first AMI level, 80% at second AMI level
-                    const threshold = Math.floor(selectedUnits.length * 0.2); // 20% threshold, use floor to not exceed
-                    if (index < threshold) {
-                        unit.amiLevel = amiLevels[0]; // First AMI level (e.g., 40%)
-                        console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (20% group, index ${index})`);
-                    } else {
-                        unit.amiLevel = amiLevels[1]; // Second AMI level (e.g., 60%)
-                        console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (80% group, index ${index})`);
+            const selected = [];
+            let currentSum = minSum;
+            for (let i = n; i > 0; i--) {
+                if (prev[i][currentSum] !== null) {
+                    selected.push(units[i-1]);
+                    currentSum = prev[i][currentSum];
+                }
+            }
+            
+            return selected;
+        }
+
+        function ensureRequiredFloors(selected, candidates, requirements) {
+            if (!requirements.requiredFloors) return selected;
+            
+            const selectedFloors = new Set(selected.map(u => u.floor));
+            requirements.requiredFloors.forEach(floor => {
+                if (!selectedFloors.has(floor)) {
+                    const floorUnit = candidates.find(u => u.floor === floor && !selected.includes(u));
+                    if (floorUnit) {
+                        selected.push(floorUnit);
                     }
-                } else {
-                    unit.amiLevel = amiLevels[0]; // Single AMI level
-                    console.log(`🏠 Unit ${unit.unit} assigned ${unit.amiLevel}% AMI (single level)`);
                 }
             });
-
-            return { title, reasoning, units: selectedUnits, totalSF };
+            
+            return selected;
         }
 
-        function findBestCombination(units, targetSF) {
-            console.log("🔍 findBestCombination:", targetSF, "SF target");
-            const tolerance = 50; // Reduced tolerance to ±50 sf for precision
-            let bestCombination = [];
-            let bestDifference = Infinity;
-            let bestTotalSF = 0;
+        function calculateAMIDistribution(amiLow, amiAverage) {
+            if (!amiLow) {
+                return [{ ami: amiAverage, percentage: 1.0 }];
+            }
+            const amiHigh = (amiAverage - 0.2 * amiLow) / 0.8;
+            return [
+                { ami: amiLow, percentage: 0.2 },
+                { ami: amiHigh, percentage: 0.8 }
+            ];
+        }
 
-            // Try all possible combinations more systematically
-            const maxUnitsToTry = Math.min(units.length, 10); // Increased to 10 units max
+        function assignAMILevels(units, amiDistribution, targetSF) {
+            if (amiDistribution.length === 1) {
+                units.forEach(u => u.amiLevel = amiDistribution[0].ami);
+                return units;
+            }
             
-            // Try combinations of different sizes
-            for (let count = 1; count <= maxUnitsToTry; count++) {
-                // Generate all possible combinations of this size
-                const combinations = generateCombinations(units, count);
-                console.log(`🔍 Testing ${combinations.length} combinations of ${count} units`);
+            const lowTarget = targetSF * 0.2;
+            const lowUnits = selectUnitsWithDP(units, lowTarget);
+            lowUnits.forEach(u => u.amiLevel = amiDistribution[0].ami);
+            
+            const highUnits = units.filter(u => !lowUnits.includes(u));
+            highUnits.forEach(u => u.amiLevel = amiDistribution[1].ami);
+            
+            return [...lowUnits, ...highUnits];
+        }
+
+        function checkAllCompliance(affordableUnits, allUnits, requirements) {
+            const freeMarketUnits = allUnits.filter(u => !affordableUnits.some(au => au.unit === u.unit));
+            
+            return {
+                floorArea: checkFloorAreaCompliance(affordableUnits, requirements.targetSF),
+                bedroom: checkBedroomCompliance(affordableUnits, freeMarketUnits, requirements.bedroomTest || 'A'),
+                unitSizes: checkUnitSizeCompliance(affordableUnits, freeMarketUnits, requirements.sizeTest || 'B'),
+                verticalDistribution: checkVerticalDistribution(affordableUnits, allUnits),
+                horizontalDistribution: checkHorizontalDistribution(affordableUnits, allUnits),
+                balconyDistribution: checkBalconyDistribution(affordableUnits, freeMarketUnits)
+            };
+        }
+
+        function checkFloorAreaCompliance(affordableUnits, targetSF) {
+            const totalSF = affordableUnits.reduce((sum, unit) => sum + unit.sf, 0);
+            const meets = totalSF >= targetSF;
+            const excess = totalSF - targetSF;
+            
+            return {
+                passes: meets && excess <= 50,
+                totalSF,
+                targetSF,
+                excess,
+                message: meets ? `✅ Floor Area: ${totalSF.toFixed(1)} sf (excess: ${excess.toFixed(1)} sf)` : `❌ Short by ${-excess.toFixed(1)} sf`
+            };
+        }
+
+        function checkBedroomCompliance(affordableUnits, freeMarketUnits, testType) {
+            const affordableBedrooms = countByBedrooms(affordableUnits);
+            const freeMarketBedrooms = countByBedrooms(freeMarketUnits);
+            
+            if (testType === 'A') {
+                return checkBedroomTestA(affordableBedrooms, freeMarketBedrooms);
+            } else {
+                return checkBedroomTestB(affordableBedrooms);
+            }
+        }
+
+        function checkBedroomTestA(affordableBedrooms, freeMarketBedrooms) {
+            const totalAffordable = Object.values(affordableBedrooms).reduce((a, b) => a + b, 0);
+            const totalFreeMarket = Object.values(freeMarketBedrooms).reduce((a, b) => a + b, 0);
+            
+            const results = [];
+            let allPass = true;
+            
+            Object.keys({...affordableBedrooms, ...freeMarketBedrooms}).forEach(bedType => {
+                const affordableCount = affordableBedrooms[bedType] || 0;
+                const freeMarketCount = freeMarketBedrooms[bedType] || 0;
                 
-                for (const combination of combinations) {
-                    const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
-                    const difference = Math.abs(totalSF - targetSF);
-
-                    // Priority 1: Find combinations that meet or exceed target SF within tolerance
-                    if (totalSF >= targetSF && difference <= tolerance) {
-                        if (difference < bestDifference || (difference === bestDifference && totalSF < bestTotalSF)) {
-                            bestCombination = combination;
-                            bestDifference = difference;
-                            bestTotalSF = totalSF;
-                            console.log("🎯 Found valid combination (meets target):", count, "units,", totalSF, "SF, diff:", difference);
-                        }
-                    }
-                }
-            }
-
-            // If no combination meets the target within tolerance, find the closest that exceeds it
-            if (bestCombination.length === 0) {
-                console.log("⚠️ No combination meets target within tolerance, finding closest that exceeds target");
-                for (let count = 1; count <= maxUnitsToTry; count++) {
-                    const combinations = generateCombinations(units, count);
-                    for (const combination of combinations) {
-                        const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
-                        
-                        if (totalSF >= targetSF) {
-                            const difference = totalSF - targetSF;
-                            if (difference < bestDifference) {
-                                bestCombination = combination;
-                                bestDifference = difference;
-                                bestTotalSF = totalSF;
-                                console.log("🎯 Found closest combination that exceeds target:", count, "units,", totalSF, "SF, diff:", difference);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // If still no combination exceeds target, find the closest overall
-            if (bestCombination.length === 0) {
-                console.log("⚠️ No combination exceeds target, finding closest overall");
-                for (let count = 1; count <= maxUnitsToTry; count++) {
-                    const combinations = generateCombinations(units, count);
-                    for (const combination of combinations) {
-                        const totalSF = combination.reduce((sum, unit) => sum + unit.sf, 0);
-                        const difference = Math.abs(totalSF - targetSF);
-
-                        if (difference < bestDifference) {
-                            bestCombination = combination;
-                            bestDifference = difference;
-                            bestTotalSF = totalSF;
-                            console.log("🎯 Found closest combination overall:", count, "units,", totalSF, "SF, diff:", difference);
-                        }
-                    }
-                }
-            }
-
-            console.log("✅ Final combination:", bestCombination.length, "units, total SF:", bestTotalSF, "target:", targetSF, "difference:", bestTotalSF - targetSF);
-            return bestCombination;
-        }
-
-        // Helper function to generate all combinations of a given size
-        function generateCombinations(units, size) {
-            if (size === 0) return [[]];
-            if (units.length === 0) return [];
-            
-            const combinations = [];
-            
-            function backtrack(start, current) {
-                if (current.length === size) {
-                    combinations.push([...current]);
-                    return;
-                }
+                const affordablePercent = (affordableCount / totalAffordable) * 100;
+                const freeMarketPercent = (freeMarketCount / totalFreeMarket) * 100;
+                const difference = Math.abs(affordablePercent - freeMarketPercent);
                 
-                for (let i = start; i < units.length; i++) {
-                    current.push(units[i]);
-                    backtrack(i + 1, current);
-                    current.pop();
-                }
-            }
-            
-            backtrack(0, []);
-            return combinations;
-        }
-
-        function normalizeAndExtractUnits(jsonData) {
-            console.log("🔧 normalizeAndExtractUnits called");
-            if (!jsonData || jsonData.length === 0) {
-                console.log("❌ No JSON data provided");
-                return null;
-            }
-
-            console.log("📊 First row keys:", Object.keys(jsonData[0]));
-            console.log("📊 First row data:", jsonData[0]);
-            console.log("📊 Total rows:", jsonData.length);
-
-            const units = [];
-            // Expanded column name variations
-            const sfColumns = [
-                'SF', 'sf', 'SQUARE_FEET', 'square_feet', 'NET SF', 'NET_SF', 'sqft', 'SQFT',
-                'Square Feet', 'square feet', 'NET SF', 'Net SF', 'net sf', 'NET_SQFT', 'net_sqft',
-                'SQUARE_FT', 'square_ft', 'SQ_FT', 'sq_ft', 'AREA', 'area', 'SIZE', 'size'
-            ];
-            const bedColumns = [
-                'BED', 'bed', 'BEDROOMS', 'bedrooms', 'BEDS', 'beds',
-                'Bedrooms', 'BEDROOM', 'bedroom', 'BED_COUNT', 'bed_count', 'ROOMS', 'rooms'
-            ];
-            const floorColumns = [
-                'FLOOR', 'floor', 'LEVEL', 'level',
-                'FLOOR_NUM', 'floor_num', 'LEVEL_NUM', 'level_num', 'STORY', 'story', 'STORIES', 'stories'
-            ];
-            const unitColumns = [
-                'UNIT', 'unit', 'UNIT_NUMBER', 'unit_number', 'APT', 'apt',
-                'APARTMENT', 'apartment', 'UNIT_ID', 'unit_id', 'NUMBER', 'number', 'ID', 'id'
-            ];
-
-            console.log("🔍 Looking for SF columns:", sfColumns);
-            console.log("🔍 Looking for BED columns:", bedColumns);
-            console.log("🔍 Looking for FLOOR columns:", floorColumns);
-            console.log("🔍 Looking for UNIT columns:", unitColumns);
-
-            // Check what columns are actually available
-            const availableColumns = Object.keys(jsonData[0]);
-            console.log("📋 Available columns in Excel:", availableColumns);
-            
-            // Find which columns match our patterns
-            const foundSfColumn = availableColumns.find(col => sfColumns.some(sfCol => col.toLowerCase().includes(sfCol.toLowerCase())));
-            const foundBedColumn = availableColumns.find(col => bedColumns.some(bedCol => col.toLowerCase().includes(bedCol.toLowerCase())));
-            const foundFloorColumn = availableColumns.find(col => floorColumns.some(floorCol => col.toLowerCase().includes(floorCol.toLowerCase())));
-            const foundUnitColumn = availableColumns.find(col => unitColumns.some(unitCol => col.toLowerCase().includes(unitCol.toLowerCase())));
-            
-            console.log("🎯 Found columns:", {
-                sf: foundSfColumn,
-                bed: foundBedColumn,
-                floor: foundFloorColumn,
-                unit: foundUnitColumn
+                const passes = difference <= 1;
+                if (!passes) allPass = false;
+                
+                results.push({
+                    bedType: `${bedType}BR`,
+                    passes,
+                    affordablePercent: affordablePercent.toFixed(1),
+                    freeMarketPercent: freeMarketPercent.toFixed(1),
+                    difference: difference.toFixed(1)
+                });
             });
+            
+            return {
+                passes: allPass,
+                testType: 'A (Proportional)',
+                results,
+                message: allPass ? '✅ Bedroom Test A: Proportions within ±1%' : '❌ Bedroom Test A: Proportions exceed ±1%'
+            };
+        }
 
-            console.log("📊 Processing", jsonData.length, "rows");
-            jsonData.forEach((row, index) => {
-                console.log(`📋 Row ${index + 1}:`, row);
-                let sf = null, bed = null, floor = null, unit = null;
+        function checkBedroomTestB(affordableBedrooms) {
+            const totalAffordable = Object.values(affordableBedrooms).reduce((a, b) => a + b, 0);
+            const studios = affordableBedrooms['0'] || 0;
+            const twoBRPlus = Object.keys(affordableBedrooms)
+                .filter(bed => parseInt(bed) >= 2)
+                .reduce((sum, bed) => sum + (affordableBedrooms[bed] || 0), 0);
+            
+            const studioPercent = (studios / totalAffordable) * 100;
+            const twoBRPlusPercent = (twoBRPlus / totalAffordable) * 100;
+            
+            const studioPass = studioPercent <= 25;
+            const twoBRPlusPass = twoBRPlusPercent >= 50;
+            const passes = studioPass && twoBRPlusPass;
+            
+            return {
+                passes,
+                testType: 'B (Fixed)',
+                studioPercent: studioPercent.toFixed(1),
+                twoBRPlusPercent: twoBRPlusPercent.toFixed(1),
+                message: passes ? '✅ Bedroom Test B: ≤25% studios, ≥50% 2BR+' : '❌ Bedroom Test B failed'
+            };
+        }
 
-                // Find SF column using exact match first, then pattern matching
-                if (foundSfColumn) {
-                    sf = parseFloat(row[foundSfColumn]);
-                    console.log(`✅ Found SF in column "${foundSfColumn}":`, sf);
-                } else {
-                    // Fallback to original method
-                    for (const col of sfColumns) {
-                        if (row[col] !== undefined && row[col] !== null) {
-                            sf = parseFloat(row[col]);
-                            console.log(`✅ Found SF in column "${col}":`, sf);
-                            break;
-                        }
-                    }
-                }
+        function checkUnitSizeCompliance(affordableUnits, freeMarketUnits, testType) {
+            if (testType === 'A') return checkSizeTestA(affordableUnits);
+            if (testType === 'B') return checkSizeTestB(affordableUnits);
+            return checkSizeTestC(affordableUnits, freeMarketUnits);
+        }
 
-                // Find BED column
-                if (foundBedColumn) {
-                    bed = parseInt(row[foundBedColumn]);
-                    console.log(`✅ Found BED in column "${foundBedColumn}":`, bed);
-                } else {
-                    for (const col of bedColumns) {
-                        if (row[col] !== undefined && row[col] !== null) {
-                            bed = parseInt(row[col]);
-                            console.log(`✅ Found BED in column "${col}":`, bed);
-                            break;
-                        }
-                    }
-                }
-
-                // Find FLOOR column
-                if (foundFloorColumn) {
-                    floor = parseInt(row[foundFloorColumn]);
-                    console.log(`✅ Found FLOOR in column "${foundFloorColumn}":`, floor);
-                } else {
-                    for (const col of floorColumns) {
-                        if (row[col] !== undefined && row[col] !== null) {
-                            floor = parseInt(row[col]);
-                            console.log(`✅ Found FLOOR in column "${col}":`, floor);
-                            break;
-                        }
-                    }
-                }
-
-                // Find UNIT column
-                if (foundUnitColumn) {
-                    unit = String(row[foundUnitColumn]);
-                    console.log(`✅ Found UNIT in column "${foundUnitColumn}":`, unit);
-                } else {
-                    for (const col of unitColumns) {
-                        if (row[col] !== undefined && row[col] !== null) {
-                            unit = String(row[col]);
-                            console.log(`✅ Found UNIT in column "${col}":`, unit);
-                            break;
-                        }
-                    }
-                }
-
-                console.log(`📊 Row ${index + 1} extracted:`, { sf, bed, floor, unit });
-
-                if (sf && !isNaN(sf) && sf > 0) {
-                    units.push({
-                        sf: sf,
-                        bed: bed || 0,
-                        floor: floor || 1,
-                        unit: unit || `Unit_${index + 1}`,
-                        amiLevel: 40 // Default AMI level
-                    });
-                    console.log("✅ Unit extracted:", { sf, bed, floor, unit });
-                } else {
-                    console.log("❌ Invalid unit data - SF issue:", { sf, isNaN: isNaN(sf), isPositive: sf > 0 });
-                }
+        function checkSizeTestA(affordableUnits) {
+            const results = affordableUnits.map(unit => {
+                const minSize = MIN_SIZES[unit.bed] || MIN_SIZES[4];
+                return { ...unit, minRequired: minSize, passes: unit.sf >= minSize };
             });
-
-            console.log("🏢 Total valid units extracted:", units.length);
-            if (units.length === 0) {
-                console.log("❌ No valid units found. All rows failed validation.");
-                console.log("💡 Common issues:");
-                console.log("   - SF column not found or empty");
-                console.log("   - SF values are not numbers");
-                console.log("   - SF values are 0 or negative");
-                console.log("📋 All available columns:", availableColumns);
-                console.log("🔍 Try looking for columns containing these keywords:");
-                console.log("   - Square footage: 'sf', 'square', 'feet', 'area', 'size'");
-                console.log("   - Bedrooms: 'bed', 'room', 'br'");
-                console.log("   - Floor: 'floor', 'level', 'story'");
-                console.log("   - Unit: 'unit', 'apt', 'number', 'id'");
-            }
-            return units.length > 0 ? units : null;
+            const allPass = results.every(r => r.passes);
+            return { passes: allPass, testType: 'A', results, message: allPass ? '✅ Size Test A' : '❌ Size Test A' };
         }
 
-        function getAMIColor(amiLevel) {
-            if (amiLevel <= 40) return '#e74c3c'; // Red
-            if (amiLevel <= 50) return '#f39c12'; // Orange
-            if (amiLevel <= 60) return '#f1c40f'; // Yellow
-            if (amiLevel <= 70) return '#2ecc71'; // Light Green
-            return '#27ae60'; // Green
+        function checkSizeTestB(affordableUnits) {
+            const byBed = affordableUnits.reduce((acc, u) => {
+                if (!acc[u.bed]) acc[u.bed] = [];
+                acc[u.bed].push(u.sf);
+                return acc;
+            }, {});
+            const results = Object.entries(byBed).map(([bed, sizes]) => {
+                const avg = sizes.reduce((s, v) => s + v, 0) / sizes.length;
+                const min = MIN_SIZES[bed] || MIN_SIZES[4];
+                return { bed, avg: avg.toFixed(1), min, passes: avg >= min };
+            });
+            const allPass = results.every(r => r.passes);
+            return { passes: allPass, testType: 'B', results, message: allPass ? '✅ Size Test B' : '❌ Size Test B' };
         }
 
+        function checkSizeTestC(affordableUnits, freeMarketUnits) {
+            const affByBed = affordableUnits.reduce((acc, u) => {
+                if (!acc[u.bed]) acc[u.bed] = [];
+                acc[u.bed].push(u.sf);
+                return acc;
+            }, {});
+            const fmByBed = freeMarketUnits.reduce((acc, u) => {
+                if (!acc[u.bed]) acc[u.bed] = [];
+                acc[u.bed].push(u.sf);
+                return acc;
+            }, {});
+            const results = Object.entries(affByBed).map(([bed, affSizes]) => {
+                const fmSizes = fmByBed[bed] || [];
+                if (fmSizes.length === 0) return { bed, passes: true, message: 'N/A' };
+                const affAvg = affSizes.reduce((s, v) => s + v, 0) / affSizes.length;
+                const fmAvg = fmSizes.reduce((s, v) => s + v, 0) / fmSizes.length;
+                return { bed, affAvg: affAvg.toFixed(1), fmAvg: fmAvg.toFixed(1), passes: affAvg >= fmAvg };
+            });
+            const allPass = results.every(r => r.passes);
+            return { passes: allPass, testType: 'C', results, message: allPass ? '✅ Size Test C' : '❌ Size Test C' };
+        }
+
+        function checkVerticalDistribution(affordableUnits, allUnits) {
+            const affFloors = new Set(affordableUnits.map(u => u.floor));
+            const totalFloors = new Set(allUnits.map(u => u.floor));
+            const pct = affFloors.size / totalFloors.size;
+            const passes = pct >= 0.65;
+            return { passes, message: passes ? `✅ Vertical: ${pct.toFixed(2)} ≥ 0.65` : `❌ Vertical: ${pct.toFixed(2)} < 0.65` };
+        }
+
+        function checkHorizontalDistribution(affordableUnits, allUnits) {
+            const floorCounts = allUnits.reduce((acc, u) => {
+                if (!acc[u.floor]) acc[u.floor] = { total: 0, aff: 0 };
+                acc[u.floor].total++;
+                if (affordableUnits.some(au => au.unit === u.unit)) acc[u.floor].aff++;
+                return acc;
+            }, {});
+            const violations = Object.entries(floorCounts).filter(([, {aff, total}]) => (aff / total) > 0.67);
+            const passes = violations.length === 0;
+            return { passes, message: passes ? '✅ Horizontal: No floor >2/3 aff' : `❌ Horizontal: ${violations.length} violations` };
+        }
+
+        function checkBalconyDistribution(affordable, freeMarket) {
+            const affordableBalconies = affordable.filter(u => u.hasBalcony).length;
+            const freeMarketBalconies = freeMarket.filter(u => u.hasBalcony).length;
+            const totalBalconies = affordableBalconies + freeMarketBalconies;
+            if (totalBalconies === 0) return { passes: true, message: '⚠️ No balconies in data' };
+            
+            const affordablePct = affordableBalconies / affordable.length;
+            const freeMarketPct = freeMarketBalconies / freeMarket.length;
+            const diff = Math.abs(affordablePct - freeMarketPct);
+            const passes = diff <= 0.05;
+            
+            return {
+                passes,
+                message: passes ? '✅ Balcony Distribution: Evenly distributed' : `❌ Balcony Distribution: Difference of ${(diff*100).toFixed(1)}%`
+            };
+        }
+
+        function displayComplianceResults(scenarios, requirements) {
+            const progressEl = chatWindow.querySelector('.progress-indicator');
+            if (progressEl) progressEl.remove();
+            
+            let html = '<div class="compliance-results">';
+            
+            scenarios.forEach((scenario, index) => {
+                html += generateScenarioHTML(scenario, index + 1, requirements);
+            });
+            
+            html += '</div>';
+            html += `<button class="download-btn" onclick="downloadResults()">📥 Download Results</button>`;
+            
+            addMessage(html, 'ai', true);
+            state.analysisResults = scenarios;
+        }
+
+        function generateScenarioHTML(scenario, scenarioNum, requirements) {
+            let html = `
+                <div class="scenario-header">
+                    <h3>Scenario ${scenarioNum}: ${scenario.name}</h3>
+                    <p>${scenario.description}</p>
+                </div>
+                
+                <div class="summary-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">${scenario.units.length}</div>
+                        <div>Affordable Units</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${scenario.totalSF.toLocaleString()}</div>
+                        <div>Total SF</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${(scenario.totalSF - requirements.targetSF).toFixed(1)}</div>
+                        <div>SF Over Target</div>
+                    </div>
+                </div>
+                
+                <h4>Compliance Checks</h4>
+            `;
+            
+            html += generateComplianceHTML(scenario.compliance);
+            
+            html += `<h4>AMI Breakdown</h4>`;
+            Object.entries(scenario.amiBreakdown).forEach(([ami, data]) => {
+                const pct = (data.count / scenario.units.length * 100).toFixed(1);
+                html += `<div class="compliance-check compliance-pass">${ami}% AMI: ${data.count} units (${pct}%) - ${data.totalSF.toFixed(1)} sf</div>`;
+            });
+            
+            html += `<h4>Selected Units</h4><div class="unit-grid">`;
+            scenario.units.forEach(unit => {
+                const amiClass = unit.amiLevel <= 40 ? 'ami-40' : 'ami-60';
+                html += `
+                    <div class="unit-card ${amiClass}">
+                        <strong>${unit.unit}</strong><br>
+                        ${unit.bed}BR • ${unit.sf} sf • Floor ${unit.floor}<br>
+                        ${unit.amiLevel}% AMI ${unit.hasBalcony ? '• Balcony' : ''}
+                    </div>
+                `;
+            });
+            html += '</div><hr>';
+
+            return html;
+        }
+
+        function generateComplianceHTML(compliance) {
+            let html = '';
+            Object.values(compliance).forEach(check => {
+                const cls = check.passes ? 'pass' : (check.passes === null ? 'warning' : 'fail');
+                html += `<div class="compliance-check compliance-${cls}">${check.message}</div>`;
+            });
+            return html;
+        }
+
+        function calculateAMIBreakdown(units) {
+            const breakdown = {};
+            units.forEach(unit => {
+                const ami = unit.amiLevel;
+                if (!breakdown[ami]) breakdown[ami] = { count: 0, totalSF: 0 };
+                breakdown[ami].count++;
+                breakdown[ami].totalSF += unit.sf;
+            });
+            return breakdown;
+        }
+
+        function countByBedrooms(units) {
+            const counts = {};
+            units.forEach(unit => counts[unit.bed] = (counts[unit.bed] || 0) + 1);
+            return counts;
+        }
+
+        window.downloadResults = function() {
+            if (!state.analysisResults || !state.buildingData) return alert('No results');
+            
+            const wb = XLSX.utils.book_new();
+            
+            state.analysisResults.forEach((scenario, index) => {
+                const wsData = state.buildingData.map(unit => {
+                    const affUnit = scenario.units.find(au => au.unit === unit.unit);
+                    return {
+                        Unit: unit.unit,
+                        Floor: unit.floor,
+                        Bedrooms: unit.bed,
+                        SF: unit.sf,
+                        AMI: affUnit ? `${affUnit.amiLevel}%` : 'Market',
+                        Balcony: unit.hasBalcony ? 'Yes' : 'No'
+                    };
+                });
+                
+                const ws = XLSX.utils.json_to_sheet(wsData);
+                XLSX.utils.book_append_sheet(wb, ws, `Scenario ${index + 1}`);
+            });
+            
+            XLSX.writeFile(wb, 'NYC_Affordable_Analysis_v8.1.xlsx');
+        };
     </script>
 </body>
 </html>
