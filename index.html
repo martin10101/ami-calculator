@@ -465,7 +465,7 @@
                 selectedUnits = findBestCombination(largeUnits, requirements.targetSF);
             } else if (title === "Maximum Affordability") {
                 // Force using smaller units by limiting to bottom 50% smallest units
-                const smallUnits = availableUnits.slice(-Math.ceil(availableUnits.length * 0.5));
+                const smallUnits = availableUnits.slice(0, Math.ceil(availableUnits.length * 0.5));
                 selectedUnits = findBestCombination(smallUnits, requirements.targetSF);
             } else if (title === "Balanced Floor Distribution") {
                 // Prioritize units from required floors, then mix with other floors
