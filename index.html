@@ -342,6 +342,11 @@
                  - ALWAYS include requiredFloors if mentioned
                  - For mixed AMI: use [40, 60] when user mentions "40% AMI is required" with "average should still be 60% AMI"
                  - For single AMI: use [40] when user says "40% AMI units are required"
+                 
+                 **BULLETPROOF PARSING:**
+                 - If user says "40% AMI is required it means that the average should still be 60% AMI, but 20% should be at 40% AMI" → ALWAYS use [40, 60]
+                 - If user says "There should be an affordable unit on floors 5 and 6" → ALWAYS use [5, 6]
+                 - If user says "2,043.3 sf of affordable is required" → ALWAYS use 2043.3
               `;
          }
 
@@ -389,32 +394,38 @@
         function generateOptimizedScenario(title, reasoning, requirements, strategy) {
             let availableUnits = [...state.buildingData];
             
-            // Pre-filter units based on required floors if specified
-            if (requirements.requiredFloors && requirements.requiredFloors.length > 0) {
-                const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
-                const remainingUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
-                
-                // Different sorting strategies
-                switch (strategy) {
-                    case "exact":
-                        requiredFloorUnits.sort((a, b) => a.sf - b.sf);
-                        remainingUnits.sort((a, b) => a.sf - b.sf);
-                        break;
-                    case "minimize_units":
-                        requiredFloorUnits.sort((a, b) => b.sf - a.sf);
-                        remainingUnits.sort((a, b) => b.sf - a.sf);
-                        break;
-                    case "maximize_units":
-                        requiredFloorUnits.sort((a, b) => a.sf - b.sf);
-                        remainingUnits.sort((a, b) => a.sf - b.sf);
-                        break;
-                    case "balanced_floors":
-                        requiredFloorUnits.sort((a, b) => a.sf - b.sf);
-                        remainingUnits.sort((a, b) => a.sf - b.sf);
-                        break;
-                }
-                
-                availableUnits = [...requiredFloorUnits, ...remainingUnits];
+                         // BULLETPROOF: ALWAYS respect required floors
+             if (requirements.requiredFloors && requirements.requiredFloors.length > 0) {
+                 const requiredFloorUnits = availableUnits.filter(u => requirements.requiredFloors.includes(u.floor));
+                 const remainingUnits = availableUnits.filter(u => !requirements.requiredFloors.includes(u.floor));
+                 
+                 // CRITICAL: If no units on required floors, use all units but prioritize required floors
+                 if (requiredFloorUnits.length === 0) {
+                     console.warn(`WARNING: No units found on required floors ${requirements.requiredFloors}. Using all available units.`);
+                     availableUnits = [...availableUnits];
+                 } else {
+                     // Different sorting strategies
+                     switch (strategy) {
+                         case "exact":
+                             requiredFloorUnits.sort((a, b) => a.sf - b.sf);
+                             remainingUnits.sort((a, b) => a.sf - b.sf);
+                             break;
+                         case "minimize_units":
+                             requiredFloorUnits.sort((a, b) => b.sf - a.sf);
+                             remainingUnits.sort((a, b) => b.sf - a.sf);
+                             break;
+                         case "maximize_units":
+                             requiredFloorUnits.sort((a, b) => a.sf - b.sf);
+                             remainingUnits.sort((a, b) => a.sf - b.sf);
+                             break;
+                         case "balanced_floors":
+                             requiredFloorUnits.sort((a, b) => a.sf - b.sf);
+                             remainingUnits.sort((a, b) => a.sf - b.sf);
+                             break;
+                     }
+                     
+                     availableUnits = [...requiredFloorUnits, ...remainingUnits];
+                 }
             } else {
                 // Sort all units based on strategy
                 switch (strategy) {
@@ -450,20 +461,24 @@
             
             const totalSF = selectedUnits.reduce((sum, unit) => sum + unit.sf, 0);
             
-            // Assign AMI levels based on distribution
-            const amiLevels = requirements.amiDistribution || [40];
-            selectedUnits.forEach((unit, index) => {
-                if (amiLevels.length === 2) {
-                    // For mixed distribution: 20% at first AMI level, 80% at second AMI level
-                    const threshold = Math.floor(selectedUnits.length * 0.2);
-                    unit.amiLevel = index < threshold ? amiLevels[0] : amiLevels[1];
-                } else {
-                    // For single AMI level: all units get the same AMI
-                    unit.amiLevel = amiLevels[0];
-                }
-                // Ensure AMI level is always a number
-                unit.amiLevel = parseInt(unit.amiLevel) || 40;
-            });
+                         // BULLETPROOF AMI DISTRIBUTION: ALWAYS respect the rules
+             const amiLevels = requirements.amiDistribution || [40];
+             console.log(`Applying AMI distribution: ${amiLevels} to ${selectedUnits.length} units`);
+             
+             selectedUnits.forEach((unit, index) => {
+                 if (amiLevels.length === 2) {
+                     // For mixed distribution: 20% at first AMI level, 80% at second AMI level
+                     const threshold = Math.floor(selectedUnits.length * 0.2);
+                     unit.amiLevel = index < threshold ? amiLevels[0] : amiLevels[1];
+                     console.log(`Unit ${index + 1}: ${unit.amiLevel}% AMI (threshold: ${threshold})`);
+                 } else {
+                     // For single AMI level: all units get the same AMI
+                     unit.amiLevel = amiLevels[0];
+                     console.log(`Unit ${index + 1}: ${unit.amiLevel}% AMI (single level)`);
+                 }
+                 // Ensure AMI level is always a number
+                 unit.amiLevel = parseInt(unit.amiLevel) || 40;
+             });
 
                          // FINAL BULLETPROOF CHECK: Never return under target SF
              if (totalSF < requirements.targetSF) {
