@@ -521,13 +521,20 @@
             let bestDifference = Infinity;
             let bestTotalSF = 0;
 
-            // Limit the number of units to consider to prevent freezing
-            const maxUnitsToConsider = Math.min(units.length, 20); // Limit to 20 units max
+            // Adjust limits based on target SF - larger targets need more units
+            const avgUnitSize = units.reduce((sum, u) => sum + u.sf, 0) / units.length;
+            const estimatedUnitsNeeded = Math.ceil(targetSF / avgUnitSize);
+            console.log(`📊 Average unit size: ${avgUnitSize.toFixed(1)} sf`);
+            console.log(`📊 Estimated units needed: ${estimatedUnitsNeeded}`);
+            
+            // Scale limits based on target size
+            const maxUnitsToConsider = Math.min(units.length, Math.max(30, estimatedUnitsNeeded * 2));
             const limitedUnits = units.slice(0, maxUnitsToConsider);
             console.log(`🔍 Using ${limitedUnits.length} units out of ${units.length} total units`);
-
-            // Use a more efficient greedy approach with limited backtracking
-            const maxUnitsToTry = Math.min(limitedUnits.length, 8); // Reduced to 8 units max
+            
+            // Scale max units to try based on target
+            const maxUnitsToTry = Math.min(limitedUnits.length, Math.max(15, estimatedUnitsNeeded + 5));
+            console.log(`🔍 Max units to try: ${maxUnitsToTry}`);
             
             // Try different combination sizes with early termination
             for (let count = 1; count <= maxUnitsToTry; count++) {
@@ -615,7 +622,8 @@
             if (units.length === 0) return [];
             
             const combinations = [];
-            const maxCombinations = 1000; // Limit total combinations to prevent freezing
+            // Scale combination limit based on target size
+            const maxCombinations = Math.max(1000, Math.min(5000, size * 200)); // More combinations for larger targets
             
             function smartBacktrack(start, current, currentSF) {
                 if (combinations.length >= maxCombinations) {
@@ -628,8 +636,9 @@
                     return;
                 }
                 
-                // Early termination if we're already way over target
-                if (currentSF > targetSF + 500) {
+                // Early termination if we're already way over target (more flexible for larger targets)
+                const overTargetThreshold = Math.max(500, targetSF * 0.1); // 10% of target or 500, whichever is larger
+                if (currentSF > targetSF + overTargetThreshold) {
                     return;
                 }
                 
@@ -637,7 +646,7 @@
                     const newSF = currentSF + units[i].sf;
                     
                     // Skip if adding this unit would make us way over target
-                    if (newSF > targetSF + 500) {
+                    if (newSF > targetSF + overTargetThreshold) {
                         continue;
                     }
                     
